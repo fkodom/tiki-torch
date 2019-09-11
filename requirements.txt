@@ -1,0 +1,13 @@
+pandas
+imageio
+Pillow
+numpy
+matplotlib
+scipy
+scikit-image
+h5py
+torch>=1.0.0
+tqdm
+
+datacube_processing
+datacube_animation

@@ -1,0 +1,13 @@
+.idea
+__pycache__
+data
+
+*.mat
+*.csv
+*.h5
+*.hdf5
+*.pkl.gz
+*.avi
+*.mp4
+
+doc
