@@ -14,25 +14,25 @@ from darcnet.src.network import Network
 # noinspection PyPep8Naming
 def ConvLayer(in_features: int, mid_features: int, out_features: int):
     return nn.Sequential(
-            nn.Conv3d(in_features, mid_features, 3, padding=1),
-            nn.LeakyReLU(0.01),
-            nn.Conv3d(mid_features, out_features, 1, padding=0),
-            nn.Conv3d(out_features, out_features, 1, padding=0),
-            nn.LeakyReLU(0.01)
-        )
+        nn.Conv3d(in_features, mid_features, 3, padding=1),
+        nn.LeakyReLU(0.01),
+        nn.Conv3d(mid_features, out_features, 1, padding=0),
+        nn.Conv3d(out_features, out_features, 1, padding=0),
+        nn.LeakyReLU(0.01),
+    )
 
 
 # noinspection PyPep8Naming
 def ConvTransposeLayer(in_features: int, mid_features: int, out_features: int):
     return nn.Sequential(
-            # nn.ConvTranspose3d(in_features, mid_features, 3, padding=1),
-            # nn.LeakyReLU(0.01),
-            nn.ConvTranspose3d(in_features, mid_features, 3, padding=1),
-            nn.ConvTranspose3d(mid_features, out_features, 1, padding=0),
-            nn.LeakyReLU(0.01),
-            nn.ConvTranspose3d(out_features, out_features, 1, padding=0),
-            nn.LeakyReLU(0.01)
-        )
+        # nn.ConvTranspose3d(in_features, mid_features, 3, padding=1),
+        # nn.LeakyReLU(0.01),
+        nn.ConvTranspose3d(in_features, mid_features, 3, padding=1),
+        nn.ConvTranspose3d(mid_features, out_features, 1, padding=0),
+        nn.LeakyReLU(0.01),
+        nn.ConvTranspose3d(out_features, out_features, 1, padding=0),
+        nn.LeakyReLU(0.01),
+    )
 
 
 class ResLayer(nn.Module):
@@ -44,7 +44,7 @@ class ResLayer(nn.Module):
             nn.Conv3d(2, 4, 3, padding=1),
             nn.Conv3d(4, 4, 1, padding=0),
             nn.LeakyReLU(0.01),
-            nn.Conv3d(4, 2, 1, padding=0)
+            nn.Conv3d(4, 2, 1, padding=0),
         )
 
     def forward(self, x):
@@ -66,7 +66,6 @@ class SummedBox2d(nn.Module):
 
 
 class Darcnet(Network):
-
     def __init__(self):
         super(Darcnet, self).__init__()
         # Build a network of 2 identical residual layers
@@ -82,14 +81,14 @@ class Darcnet(Network):
         return self.res_layers[-1].conv_layers[0].weight.device.type
 
     def _forward(self, x):
-        """Pass input datacube `x` through DARCNET.  Keep input size to about (100, 100, 100) for training,
-        due to large memory footprints.
+        """Pass input datacube `x` through DARCNET.  Keep input size to about
+        (100, 100, 100) for training, due to large memory footprints.
 
         :param x: Input values
         :return: Network outputs
         """
         # Push to GPU if necessary
-        if self.get_device_type() == 'cuda':
+        if self.get_device_type() == "cuda":
             x = x.cuda()
 
         # Divide by the temporal standard deviation
@@ -102,14 +101,14 @@ class Darcnet(Network):
         return x
 
     def forward(self, x):
-        """Pass input datacube `x` through DARCNET.  Keep input size to about (100, 100, 100) for training,
-        due to large memory footprints.
+        """Pass input datacube `x` through DARCNET.  Keep input size to about
+        (100, 100, 100) for training, due to large memory footprints.
 
         :param x: Input values
         :return: Network outputs
         """
         # Push to GPU if necessary
-        if self.get_device_type() == 'cuda':
+        if self.get_device_type() == "cuda":
             x = x.cuda()
 
         x = SummedBox2d()(x)
@@ -130,7 +129,7 @@ class Darcnet(Network):
         :return: Loss tensor
         """
         # Push to GPU if necessary
-        if self.get_device_type() == 'cuda':
+        if self.get_device_type() == "cuda":
             labels, inputs = labels.cuda(), inputs.cuda()
 
         outputs = self._forward(inputs)

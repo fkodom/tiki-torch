@@ -1,5 +1,5 @@
 """
-original.py
+yolo.py
 --------------------
 Defines DARCNET models for simultaneous PIR denoising & detection.
 """
@@ -33,11 +33,10 @@ class ResLayer(nn.Module):
             nn.Conv3d(8, 4, 1, padding=0),
             nn.LeakyReLU(0.1),
             nn.Conv3d(4, 8, 3, padding=1),
-            nn.Conv3d(8, 4, 1, padding=0)
+            nn.Conv3d(8, 4, 1, padding=0),
         )
 
     def forward(self, x: Tensor) -> Tensor:
-        r"""Pass input datacube `x` through the Residual Layer."""
         return nn.LeakyReLU(0.1)(x + self.conv_layers(x))
 
 
@@ -55,15 +54,11 @@ class SummedBox2d(nn.Module):
 
 
 class Darcnet(Network):
-
     def __init__(self):
         super(Darcnet, self).__init__()
         # Build a network of 2 identical residual layers
         self.layers = nn.Sequential(
-            ConvLayer(1, 8, 4),
-            ResLayer(),
-            ResLayer(),
-            ConvLayer(4, 8, 3),
+            ConvLayer(1, 8, 4), ResLayer(), ResLayer(), ConvLayer(4, 8, 3)
         )
 
     def get_device_type(self) -> str:
@@ -71,14 +66,14 @@ class Darcnet(Network):
         return self.layers[0][0].weight.device.type
 
     def forward(self, x: Tensor) -> Tensor:
-        """Pass input datacube `x` through DARCNET.  Keep input size to about (100, 100, 100) for training,
-        due to large memory footprints.
+        """Pass input datacube `x` through DARCNET.  Keep input size to about
+        (100, 100, 100) for training, due to large memory footprints.
 
         :param x: Input values
         :return: Network outputs
         """
         # Push to GPU if necessary
-        if self.get_device_type() == 'cuda':
+        if self.get_device_type() == "cuda":
             x = x.cuda()
 
         x = SummedBox2d()(x)
@@ -91,14 +86,13 @@ class Darcnet(Network):
         return x
 
     def batch_forward(
-        self,
-        x: Tensor,
-        chip_size: Tuple[int, int, int] = (100, 256, 256)
+        self, x: Tensor, chip_size: Tuple[int, int, int] = (100, 256, 256)
     ) -> Tensor:
-        """Pass input datacube `x` through DARCNET.  Keep input size to about (100, 100, 100) for training,
-        due to large memory footprints.
+        """Pass input datacube `x` through DARCNET.  Keep input size to about
+        (100, 100, 100) for training, due to large memory footprints.
 
         :param x: Input values
+        :param chip_size: Maximum size of datacube chips for batch processing.
         :return: Network outputs
         """
         batch, nchan, nframe, nrow, ncol = x.shape
@@ -109,31 +103,37 @@ class Darcnet(Network):
             for f0 in range(0, nframe, df):
                 for r0 in range(0, nrow, dr):
                     for c0 in range(0, ncol, dc):
-                        f1, r1, c1 = min(f0 + df, nframe), min(r0 + dr, nrow), min(c0 + dc, ncol)
-                        out[:, :, f0:f1, r0:r1, c0:c1] = self.forward(x[:, :, f0:f1, r0:r1, c0:c1])
+                        f1, r1, c1 = (
+                            min(f0 + df, nframe),
+                            min(r0 + dr, nrow),
+                            min(c0 + dc, ncol),
+                        )
+                        out[:, :, f0:f1, r0:r1, c0:c1] = self.forward(
+                            x[:, :, f0:f1, r0:r1, c0:c1]
+                        )
 
         return out
 
     @staticmethod
     def _non_max_frame(detections: Tensor, area_threshold: float = 1.0):
-        """Performs non-max suppression for detections in a single frame.  This greatly reduces the memory footprint,
-        compared to non-max suppression for all detections at once.
+        """Performs non-max suppression for detections in a single frame.  This
+        greatly reduces the memory footprint, compared to non-max suppression for
+        all detections at once.
 
-        :param detections: Detections in a single frame.  For consistency, maintains the same format as detections
-            in _non_max_suppresion below.  Shape: (N, 4).  Columns contain: (confidence, frame, row, col).
-        :param area_threshold: Minimum overlapping area before neighboring detections are suppressed.  For PIR
-            detections, this should be set to a low value (e.g. area_threshold < 1.0).
+        :param detections: Detections in a single frame.  For consistency,
+            maintains the same format as detections in _non_max_suppresion below.
+            Shape: (N, 4).  Columns contain: (confidence, frame, row, col).
+        :param area_threshold: Minimum overlapping area before neighboring
+            detections are suppressed.  For PIR detections, this should be set
+            to a low value (e.g. area_threshold < 1.0).
         :return: Filtered detections, with non-maximal values removed
         """
         if detections.numel() == 0:
             return torch.empty(0, 3, device=detections.device, dtype=detections.dtype)
 
-        dx = torch.relu(
-            torch.sub(3, torch.abs(detections[:, 2].unsqueeze(0) - detections[:, 2].unsqueeze(1)))
-        )
-        dy = torch.relu(
-            torch.sub(3, torch.abs(detections[:, 3].unsqueeze(0) - detections[:, 3].unsqueeze(1)))
-        )
+        displacements = detections[:, 2:].unsqueeze(0) - detections[:, 2:].unsqueeze(1)
+        dx = torch.relu(torch.sub(3, displacements[:, :, 0].abs()))
+        dy = torch.relu(torch.sub(3, displacements[:, :, 1].abs()))
         mask = (dx * dy).ge(area_threshold).type(torch.float32)
         retain_idx = torch.argmax(detections[:, 0].unsqueeze(0) * mask, dim=1)
 
@@ -144,45 +144,59 @@ class Darcnet(Network):
             return torch.empty(0, 3, device=detections.device, dtype=detections.dtype)
 
     def _non_max_suppression(self, detections: Tensor, area_threshold: float = 1.0):
-        """Performs non-max suppression for each frame in a datacube.  Non-maximal detections are those that overlap
-        another detection (or multiple) in the same frame, but have lower confidence scores.  Non-maximal detections
-        are assumed to be duplicate detections of a single object, and they are removed from the detections array.
+        """Performs non-max suppression for each frame in a datacube.  Non-maximal
+        detections are those that overlap another detection (or multiple) in the
+        same frame, but have lower confidence scores.  Non-maximal detections
+        are assumed to be duplicate detections of a single object, and they are
+        removed from the detections array.
 
-        :param detections: Detection values.  Shape: (N, 4).  Columns contain: (confidence, frame, row, col).
-        :param area_threshold: Minimum overlapping area before neighboring detections are suppressed.  For PIR
-            detections, this should be set to a low value (e.g. area_threshold < 1.0).
+        :param detections: Detection values.  Shape: (N, 4).  Columns contain:
+            (confidence, frame, row, col).
+        :param area_threshold: Minimum overlapping area before neighboring
+            detections are suppressed.  For PIR detections, this should be set
+            to a low value (e.g. area_threshold < 1.0).
         :return: Filtered detections, with non-maximal values removed
         """
         detects = []
         frames = torch.unique(detections[:, 1].type(torch.int32))
 
         for frame in frames:
-            _detects = self._non_max_frame(detections[detections[:, 1] == frame.item()], area_threshold=area_threshold)
+            _detects = self._non_max_frame(
+                detections[detections[:, 1] == frame.item()],
+                area_threshold=area_threshold,
+            )
             if _detects.numel() > 0:
                 detects.append(_detects)
 
         if len(detects) == 0:
             return torch.empty(0, 3, device=detections.device)
 
-        return torch.cat(detects, 0)
+        return torch.cat(tuple(detects), 0)
 
-    def detect(self, x: Tensor, threshold: float = 0.7, area_threshold: float = 0.5) -> Tensor:
-        """Performs a forward pass with Darcnet, extracts detection coordinates, and suppresses non-maximal detections.
+    def detect(
+        self, x: Tensor, threshold: float = 0.7, area_threshold: float = 0.5
+    ) -> Tensor:
+        """Performs a forward pass with Darcnet, extracts detection coordinates,
+        and suppresses non-maximal detections.
 
         :param x: Raw datacube to be processed
-        :param threshold: Intensity threshold for obtaining detections.  Applied after the Darcnet forward pass
-        :param area_threshold: Area threshold for determining overlapping detections.  Used for non-max suppression.
+        :param threshold: Intensity threshold for obtaining detections.  Applied
+            after the Darcnet forward pass
+        :param area_threshold: Area threshold for determining overlapping
+            detections.  Used for non-max suppression.
         :return: Tensor of detection coordinates
         """
         with torch.no_grad():
             x = self.batch_forward(x, chip_size=(150, 256, 256)).squeeze(0)
 
         nchan, nframe, nrow, ncol = x.shape
-        _frames, _rows, _cols = torch.meshgrid([
-            torch.arange(nframe, dtype=torch.float32, device=x.device),
-            torch.arange(nrow, dtype=torch.float32, device=x.device),
-            torch.arange(ncol, dtype=torch.float32, device=x.device),
-        ])
+        _frames, _rows, _cols = torch.meshgrid(
+            [
+                torch.arange(nframe, dtype=torch.float32, device=x.device),
+                torch.arange(nrow, dtype=torch.float32, device=x.device),
+                torch.arange(ncol, dtype=torch.float32, device=x.device),
+            ]
+        )
 
         mask = x[0] > threshold
         dr, dc = x[1], x[2]
@@ -192,13 +206,11 @@ class Darcnet(Network):
                 torch.masked_select(_frames, mask),
                 torch.masked_select(_rows + dr, mask),
                 torch.masked_select(_cols + dc, mask),
-            ), dim=1
+            ),
+            dim=1,
         )
 
-        detects = self._non_max_suppression(
-            detects,
-            area_threshold=area_threshold
-        )
+        detects = self._non_max_suppression(detects, area_threshold=area_threshold)
 
         return detects
 
@@ -210,7 +222,7 @@ class Darcnet(Network):
         :return: Loss tensor
         """
         # Push to GPU if necessary
-        if self.get_device_type() == 'cuda':
+        if self.get_device_type() == "cuda":
             truth, inputs = truth.cuda(), inputs.cuda()
 
         outputs = self.forward(inputs)
@@ -219,7 +231,7 @@ class Darcnet(Network):
         mask = truth[:, 0] > 0.25
         loss = nn.MSELoss()(outputs[:, 0], truth[:, 0].detach())
         loss += 0.1 * nn.MSELoss()(outputs[:, 0][mask], truth[:, 0][mask].detach())
-        mask = torch.stack(2 * [truth[:, 1] > 0.5], 1)
+        mask = torch.stack(2 * tuple([truth[:, 1] > 0.5]), 1)
         loss += 0.1 * nn.MSELoss()(outputs[:, 1:][mask], (truth[:, 1:][mask]).detach())
 
         return loss

@@ -15,18 +15,20 @@ def get_detections(denoised, original, threshold=0.3):
     """
     detections = {}
     for i, (den, org) in enumerate(zip(denoised, original)):
-        predetects = np.array(den >= threshold).astype('int')
+        predetects = np.array(den >= threshold).astype("int")
         unfiltered_detects = skimage.measure.regionprops(
-            skimage.measure.label(predetects), intensity_image=org)
+            skimage.measure.label(predetects), intensity_image=org
+        )
 
         detects = {"rows": [], "cols": []}
         for detect in unfiltered_detects:
-            if detect.weighted_centroid[0] < 0 or detect.weighted_centroid[0] >= original.shape[-2]:
+            position = detect.weighted_centroid
+            if position[0] < 0 or position[0] >= original.shape[-2]:
                 continue
-            if detect.weighted_centroid[1] < 0 or detect.weighted_centroid[1] >= original.shape[-1]:
+            if position[1] < 0 or position[1] >= original.shape[-1]:
                 continue
-            detects["rows"].append(detect.weighted_centroid[0])
-            detects["cols"].append(detect.weighted_centroid[1])
+            detects["rows"].append(position[0])
+            detects["cols"].append(position[1])
 
         detections[i] = detects
 
@@ -42,11 +44,11 @@ def export_detections(detections, path):
     :return: None
     """
     i = 0
-    fp = open(path, 'w')
-    writer = csv.writer(fp, lineterminator='\n')
+    fp = open(path, "w")
+    writer = csv.writer(fp, lineterminator="\n")
 
     for f, coords in detections.items():
-        for x, y in zip(coords['rows'], coords['cols']):
+        for x, y in zip(coords["rows"], coords["cols"]):
             writer.writerow([i, f, x, y])
             i += 1
 

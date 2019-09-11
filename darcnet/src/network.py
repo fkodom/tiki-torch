@@ -12,14 +12,14 @@ from utils.data import get_data_loader
 
 
 class Network(nn.Module):
-
     def __init__(self):
         super(Network, self).__init__()
 
     def get_device_type(self) -> str or Exception:
-        """Gets the name of the device where this model is currently stored ('cpu' or 'cuda')
+        """Gets the name of the device where this model is currently stored
+        ('cpu' or 'cuda')
         """
-        msg = f'get_device_type has not been implemented for {self.__class__.__name__}'
+        msg = f"get_device_type has not been implemented for {self.__class__.__name__}"
         raise NotImplementedError(msg)
 
     def forward(self, x: Tensor) -> Tensor or Exception:
@@ -28,32 +28,46 @@ class Network(nn.Module):
         :param x: Input values
         :return: Network outputs
         """
-        msg = f'forward has not been implemented for {self.__class__.__name__}'
+        msg = f"forward has not been implemented for {self.__class__.__name__}"
         raise NotImplementedError(msg)
 
     def batch_forward(self, x: Tensor, batch: int = 25) -> Tensor:
-        """Pushes a large number of inputs through the model using batch processing.  Intended
-        to be more memory efficient, allowing CUDA usage for large input arrays.
+        """Pushes a large number of inputs through the model using batch
+        processing.  Intended to be more memory efficient, allowing CUDA usage
+        for large input arrays.
 
         :param x: Input tensors
         :param batch: batch size for sequential processing of the inputs
         :return: Network outputs
         """
         return torch.cat(
-            tuple(self.forward(x[i:i+batch]).cpu() for i in range(0, x.shape[0], batch)), 0)
+            tuple(
+                self.forward(x[i : i + batch]).cpu()
+                for i in range(0, x.shape[0], batch)
+            ),
+            dim=0,
+        )
 
     def get_loss(self, labels: Tensor, inputs: Tensor) -> Tensor or Exception:
-        """Computes the training/validation loss of the model, given a set of inputs and truth labels.
+        """Computes the training/validation loss of the model, given a set of
+        inputs and truth labels.
 
         :param labels: Ground truth labels
         :param inputs: Training or validation inputs
         :return: Loss tensor
         """
-        msg = f'get_loss has not been implemented for {self.__class__.__name__}'
+        msg = f"get_loss has not been implemented for {self.__class__.__name__}"
         raise NotImplementedError(msg)
 
-    def step(self, x_train: Tensor, y_train: Tensor, x_val: Tensor or None, y_val: Tensor or None,
-             learn_rate: float, batch_size: int) -> Tuple[int, int]:
+    def step(
+        self,
+        x_train: Tensor,
+        y_train: Tensor,
+        x_val: Tensor or None,
+        y_val: Tensor or None,
+        learn_rate: float,
+        batch_size: int,
+    ) -> Tuple[float, float]:
         """Performs a full epoch of training and validation.
 
         :param x_train: Training inputs
@@ -70,11 +84,11 @@ class Network(nn.Module):
 
         tr_loss = 0
         train_batches = len(train_loader)
-        progress_bar = tqdm(desc='TRAIN', total=train_batches)
+        progress_bar = tqdm(desc="TRAIN", total=train_batches)
 
         for i, (inputs, labels) in enumerate(train_loader):
             progress_bar.update()
-            if device_type == 'cuda':
+            if device_type == "cuda":
                 inputs, labels = inputs.cuda(), labels.cuda()
 
             optimizer.zero_grad()
@@ -90,11 +104,11 @@ class Network(nn.Module):
         va_loss = 0
         val_loader = get_data_loader(x_val, y_val, batch_size)
         val_batches = len(val_loader)
-        progress_bar = tqdm(desc='  VAL', total=val_batches)
+        progress_bar = tqdm(desc="  VAL", total=val_batches)
 
         for i, (inputs, labels) in enumerate(val_loader):
             progress_bar.update()
-            if device_type == 'cuda':
+            if device_type == "cuda":
                 inputs, labels = inputs.cuda(), labels.cuda()
 
             loss = self.get_loss(labels, inputs)
@@ -104,9 +118,18 @@ class Network(nn.Module):
 
         return tr_loss, va_loss
 
-    def fit(self, x_train: Tensor, y_train: Tensor, x_val: Tensor or None = None, y_val: Tensor or None = None,
-            learn_rate: float = 0.001, epochs: int = 10, batch_size: int = 25, callbacks: Iterable[Callable] = (),
-            plot: bool = True) -> None:
+    def fit(
+        self,
+        x_train: Tensor,
+        y_train: Tensor,
+        x_val: Tensor or None = None,
+        y_val: Tensor or None = None,
+        learn_rate: float = 0.001,
+        epochs: int = 10,
+        batch_size: int = 25,
+        callbacks: Iterable[Callable] = (),
+        plot: bool = True,
+    ) -> None:
         """Initiates a complete training sequence for the network.
 
         :param x_train: Training inputs
@@ -117,34 +140,37 @@ class Network(nn.Module):
         :param epochs: Number of training epochs
         :param batch_size: Batch size for training
         :param callbacks: Callable functions to execute at the end of each epoch
-        :param plot: If True, the training and validation loss are plotted when training is complete (default: True)
+        :param plot: If True, the training and validation loss are plotted when
+            training is complete (default: True)
         """
         num_epochs = 0
         tr_losses, va_losses = [], []
 
         for epoch in range(epochs):
             num_epochs = epoch + 1
-            tr_loss, va_loss = self.step(x_train, y_train, x_val, y_val, learn_rate, batch_size)
+            tr_loss, va_loss = self.step(
+                x_train, y_train, x_val, y_val, learn_rate, batch_size
+            )
             tr_losses.append(tr_loss)
             va_losses.append(va_loss)
 
-            time.sleep(1e-3)    # ensures progress_bar has completely closed
-            print(f'\nEPOCH:      {num_epochs}')
-            print(f'Train loss: {tr_loss:.4E}')
-            print(f'Valid loss: {va_loss:.4E}')
+            time.sleep(1e-3)  # ensures progress_bar has completely closed
+            print(f"\nEPOCH:      {num_epochs}")
+            print(f"Train loss: {tr_loss:.4E}")
+            print(f"Valid loss: {va_loss:.4E}")
 
             for callback in callbacks:
                 callback(self)
 
             if len(va_losses) >= 3 and va_losses[-1] > va_losses[-3]:
-                print('Validation loss stopped decreasing.  Ending training.')
+                print("Validation loss stopped decreasing.  Ending training.")
                 break
 
         if plot:
             t = range(1, num_epochs)
-            plt.plot(t, tr_losses[1:], 'b-', t, va_losses[1:], 'r-')
-            plt.xlabel('Epoch')
-            plt.ylabel('Loss')
-            plt.legend(['Training Loss', 'Validation Loss'])
-            plt.title('Training Statistics')
+            plt.plot(t, tr_losses[1:], "b-", t, va_losses[1:], "r-")
+            plt.xlabel("Epoch")
+            plt.ylabel("Loss")
+            plt.legend(["Training Loss", "Validation Loss"])
+            plt.title("Training Statistics")
             plt.show()
