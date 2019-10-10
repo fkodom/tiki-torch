@@ -11,7 +11,7 @@ with open(os.path.join(local_path, "README.md"), "r") as f:
 setup(
     name="tiki",
     version="0.1",
-    description="Minimal library for visualizing PIR datacubes",
+    description="High-level neural networks library running on PyTorch",
     long_description=long_description,
     url="https://gitlab.radiancetech.com/radiance-deep-learning/tiki-torch",
     author="Frank Odom",
@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     keywords="torch neural network train PyTorch",
     classifiers=[
-        # "Development Status :: 5 - Production/Stable",
+        "Development Status :: 3 - Alpha",
         "Intended Audience :: R&D",
         "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
