@@ -1,6 +1,9 @@
 .idea
 __pycache__
-data
+*data
+build
+dist
+*egg-info
 
 *.mat
 *.csv
