@@ -1,6 +1,7 @@
 import os
 from setuptools import setup, find_packages
 
+
 local_path = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(local_path, "requirements.txt")) as f:
     install_reqs = [r for r in f.read().split("\n") if len(r) > 0]
@@ -12,7 +13,7 @@ setup(
     version="0.1",
     description="Minimal library for visualizing PIR datacubes",
     long_description=long_description,
-    # url="https://gitlab.radiancetech.com/radiance-dayton/datacube_animation",
+    url="https://gitlab.radiancetech.com/radiance-deep-learning/tiki-torch",
     author="Frank Odom",
     author_email="frank.odom@radiancetech.com",
     packages=find_packages(),
