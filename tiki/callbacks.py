@@ -24,6 +24,7 @@ __email__ = "frank.odom@radiancetech.com"
 __classification__ = "UNCLASSIFIED"
 __codename__ = codenamize(str(time()), join="", capitalize=True)
 __all__ = [
+    "Callback",
     "TerminateOnNan",
     "EarlyStopping",
     "ModelCheckpoint",

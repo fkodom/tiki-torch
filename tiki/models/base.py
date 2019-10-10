@@ -54,10 +54,9 @@ class Base(nn.Module, ABC):
 
     @property
     def device(self) -> torch.device:
-        """Gets the device where this model is currently stored.
-
-        NOTE: Requires that the model has at least 1 trainable parameter,
-        which is located on the same device as the rest of the model.
+        """Gets the device where this model is currently stored. Requires that
+        the model has at least 1 trainable parameter, which is located on the
+        same device as the rest of the model.
         """
         for param in self.parameters():
             if hasattr(param, "device"):
@@ -91,13 +90,14 @@ class Base(nn.Module, ABC):
         msg = f"forward has not been implemented for {self.__class__.__name__}"
         raise NotImplementedError(msg)
 
-    def get_helper_functions(
+    def _get_helper_functions(
         self,
         loss: str or Callable = None,
         optimizer: str or optim.Optimizer = "adam",
         callbacks: Iterable[str or Callback] = (),
         metrics: Iterable[str or Callable] = (),
     ):
+        """TODO: Documentation"""
         if loss is None:
             raise ValueError("Keyword argument 'loss' must be specified.")
 
@@ -108,7 +108,7 @@ class Base(nn.Module, ABC):
 
         return loss, optimizer, callbacks, metrics
 
-    def execute_callbacks(
+    def _execute_callbacks(
         self,
         callbacks: Iterable[Callback] = (),
         execution_times: Sequence[str] = (),
@@ -213,7 +213,7 @@ class Base(nn.Module, ABC):
         NotImplementedError
             If the 'forward' method has not been implemented for sub-classes
         """
-        loss, optimizer, callbacks, metrics = self.get_helper_functions(
+        loss, optimizer, callbacks, metrics = self._get_helper_functions(
             loss=loss, optimizer=optimizer, callbacks=callbacks, metrics=metrics
         )
 
@@ -233,7 +233,7 @@ class Base(nn.Module, ABC):
         tr_loss = loss(out, batch[-1])
 
         # Execute callbacks before model update, and if necessary, stop training
-        if self.execute_callbacks(
+        if self._execute_callbacks(
             callbacks=compile_callbacks(callbacks, ["on_forward"]),
             execution_times=["on_forward"],
             tr_loss=tr_loss,
@@ -263,7 +263,7 @@ class Base(nn.Module, ABC):
             else:
                 self.metrics[key] = alpha * self.metrics[key] + (1 - alpha) * val
 
-        return self.execute_callbacks(
+        return self._execute_callbacks(
             compile_callbacks(callbacks, ["batch"]), tr_loss=tr_loss, va_loss=va_loss
         )
 
@@ -341,7 +341,7 @@ class Base(nn.Module, ABC):
         NotImplementedError
             If the 'forward' method has not been implemented for sub-classes
         """
-        loss, optimizer, callbacks, metrics = self.get_helper_functions(
+        loss, optimizer, callbacks, metrics = self._get_helper_functions(
             loss=loss, optimizer=optimizer, callbacks=callbacks, metrics=metrics
         )
 
@@ -397,7 +397,7 @@ class Base(nn.Module, ABC):
             desc = ", ".join([f"{k}: {v:+.3e}" for k, v in self.metrics.items()])
             print(f"{epoch_str} : {desc[:-2]}")
 
-        return self.execute_callbacks(
+        return self._execute_callbacks(
             callbacks=compile_callbacks(callbacks, ["on_epoch"]),
             execution_times=["on_epoch"],
             epoch=epoch,
@@ -471,10 +471,10 @@ class Base(nn.Module, ABC):
         NotImplementedError
             If the 'forward' method has not been implemented for sub-classes
         """
-        loss, optimizer, callbacks, metrics = self.get_helper_functions(
+        loss, optimizer, callbacks, metrics = self._get_helper_functions(
             loss=loss, optimizer=optimizer, callbacks=callbacks, metrics=metrics
         )
-        self.execute_callbacks(
+        self._execute_callbacks(
             callbacks=compile_callbacks(callbacks, ["on_start"]),
             execution_times=["on_start"],
         )
@@ -500,7 +500,7 @@ class Base(nn.Module, ABC):
             if break_flag:
                 break
 
-        self.execute_callbacks(
+        self._execute_callbacks(
             callbacks=compile_callbacks(callbacks, ["on_end"]),
             execution_times=["on_final"],
         )

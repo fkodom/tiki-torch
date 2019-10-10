@@ -4,3 +4,5 @@ tqdm
 codenamize
 tensorboard>=1.14
 future
+sphinx
+sphinx_rtd_theme
