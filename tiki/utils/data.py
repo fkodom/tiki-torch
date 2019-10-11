@@ -21,9 +21,6 @@ __email__ = "frank.odom@radiancetech.com"
 __classification__ = "UNCLASSIFIED"
 __all__ = ["ListDataset", "ListDataLoader", "get_data_loaders"]
 
-# TODO: Also implement:
-#   * PostgresDataset
-
 
 class ListDataset(Dataset):
     """Dataset containing lists of Tensors, which is particularly useful when
