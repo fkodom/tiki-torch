@@ -39,7 +39,38 @@ loss_dict = {
 
 
 def get_loss(loss: str or Callable) -> Callable:
-    """TODO: Documentation"""
+    """Accepts a string or Callable, and returns an Callable function for
+    computing network loss.
+
+    NOTE:  Must accept both strings and Callables to accommodate users providing
+    mixed values for loss functions.
+
+    Parameters
+    ----------
+    loss: str or Callable
+        Specified loss function to compute.  If a Callable is provided,
+        rather than a string, this function just returns the same Callable.
+
+    Returns
+    -------
+    Callable
+        Callable function for computing network loss
+
+    Raises
+    ------
+    ValueError
+        If a string is provided, which does not correspond to a known Callable.
+
+    Examples
+    --------
+    >>> from tiki.losses import get_loss
+    >>> get_loss("mse")
+    MSELoss()
+    >>> get_loss("bce")
+    BCELoss()
+    >>> get_loss("cross_entropy")
+    CrossEntropyLoss()
+    """
     if isinstance(loss, str):
         if loss not in loss_dict.keys():
             raise ValueError(
