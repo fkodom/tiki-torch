@@ -52,6 +52,10 @@ class Base(nn.Module, ABC):
         self.all_metrics["tr_loss"] = []
         self.all_metrics["va_loss"] = []
 
+        self.info = OrderedDict()
+        self.info["epoch"] = 0
+        self.infp["input_to_model"] = None
+
     @property
     def device(self) -> torch.device:
         """Gets the device where this model is currently stored. Requires that
@@ -97,7 +101,7 @@ class Base(nn.Module, ABC):
         callbacks: Iterable[str or Callback] = (),
         metrics: Iterable[str or Callable] = (),
     ):
-        """TODO: Documentation"""
+        """"""
         if loss is None:
             raise ValueError("Keyword argument 'loss' must be specified.")
 
@@ -234,7 +238,7 @@ class Base(nn.Module, ABC):
 
         # Execute callbacks before model update, and if necessary, stop training
         if self._execute_callbacks(
-            callbacks=compile_callbacks(callbacks, ["on_forward"]),
+            callbacks=callbacks,
             execution_times=["on_forward"],
             tr_loss=tr_loss,
             va_loss=va_loss,
@@ -264,7 +268,7 @@ class Base(nn.Module, ABC):
                 self.metrics[key] = alpha * self.metrics[key] + (1 - alpha) * val
 
         return self._execute_callbacks(
-            compile_callbacks(callbacks, ["batch"]), tr_loss=tr_loss, va_loss=va_loss
+            callbacks=callbacks, execution_times=["on_batch"]
         )
 
     def fit_epoch(
@@ -276,7 +280,6 @@ class Base(nn.Module, ABC):
         batch_size: int = 20,
         shuffle: bool = True,
         num_workers: int = 4,
-        epoch: int or None = None,
         alpha: float = 0.95,
         metrics: Iterable[str or Callable] = (),
         callbacks: Iterable[str or Callback] = (),
@@ -352,6 +355,7 @@ class Base(nn.Module, ABC):
             num_workers=num_workers,
         )
 
+        epoch = self.info["epoch"]
         epoch_str = f"Ep {epoch}"
         if progress_bar:
             prog_bar = tqdm(
@@ -397,10 +401,10 @@ class Base(nn.Module, ABC):
             desc = ", ".join([f"{k}: {v:+.3e}" for k, v in self.metrics.items()])
             print(f"{epoch_str} : {desc[:-2]}")
 
+        self.info["epoch"] += 1
+
         return self._execute_callbacks(
-            callbacks=compile_callbacks(callbacks, ["on_epoch"]),
-            execution_times=["on_epoch"],
-            epoch=epoch,
+            callbacks=callbacks, execution_times=["on_epoch"], epoch=epoch
         )
 
     def fit(
@@ -474,12 +478,10 @@ class Base(nn.Module, ABC):
         loss, optimizer, callbacks, metrics = self._get_helper_functions(
             loss=loss, optimizer=optimizer, callbacks=callbacks, metrics=metrics
         )
-        self._execute_callbacks(
-            callbacks=compile_callbacks(callbacks, ["on_start"]),
-            execution_times=["on_start"],
-        )
+        self.info["input_to_model"] = tr_dataset[0].unsqueeze(0)
+        self._execute_callbacks(callbacks, execution_times=["on_start"])
 
-        for ep in range(epochs):
+        for _ in range(epochs):
             break_flag = self.fit_epoch(
                 tr_dataset,
                 va_dataset=va_dataset,
@@ -488,7 +490,6 @@ class Base(nn.Module, ABC):
                 batch_size=batch_size,
                 shuffle=shuffle,
                 num_workers=num_workers,
-                epoch=ep,
                 alpha=alpha,
                 metrics=metrics,
                 callbacks=compile_callbacks(
@@ -500,7 +501,4 @@ class Base(nn.Module, ABC):
             if break_flag:
                 break
 
-        self._execute_callbacks(
-            callbacks=compile_callbacks(callbacks, ["on_end"]),
-            execution_times=["on_final"],
-        )
+        self._execute_callbacks(callbacks=callbacks, execution_times=["on_final"])
