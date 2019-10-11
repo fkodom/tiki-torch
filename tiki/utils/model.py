@@ -5,7 +5,7 @@ A set of helper functions/classes for converting`torch` models to/from `tiki`.
 """
 
 from torch import Tensor
-from torch.nn import Module
+import torch.nn as nn
 from tiki.models import Base
 
 
@@ -24,8 +24,20 @@ class FromModule(Base):
         return x
 
 
-def from_module(module: Module):
-    """TODO: Documentation"""
+def from_module(module: nn.Module) -> Base:
+    """Converts any torch.nn.Module into a tiki.models.Base object, which
+    provides convenient methods for model training.
+
+    Parameters
+    ----------
+    module: nn.Module
+        PyTorch module to convert to tiki
+
+    Returns
+    -------
+    Base
+        Trainable tiki model
+    """
     net = FromModule()
     net._modules = module._modules
     net.forward = module.forward
