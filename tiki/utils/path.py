@@ -9,13 +9,37 @@ __all__ = ["custom_path"]
 
 
 def custom_path(path: str, **kwargs) -> str:
-    """TODO: Documentation"""
+    """Customizes a string by replacing keywords with specified values.
+    Typically used for creating unique save paths for training logs, model
+    checkpoints, etc.  Allowed keywords: ["{codename}", "{epoch}", "{date}",
+    "{time}", "{datetime}"]
+
+    Parameters
+    ----------
+    path: str
+        String to be customized
+    kwargs
+        Keyword arguments used for customization
+
+    Examples
+    --------
+    >>> custom_path("{codename}.txt", codename="narwhal")
+    'narwhal.txt'
+    >>> custom_path("epoch-{epoch}.txt", epoch=4)
+    'epoch-4.txt'
+    """
     if "{codename}" in path and "codename" in kwargs.keys():
-        path = path.replace("{codename}", kwargs["codename"])
+        path = path.replace("{codename}", str(kwargs["codename"]))
     if "{epoch}" in path and "epoch" in kwargs.keys():
-        path = path.replace("{epoch}", kwargs["epoch"])
+        path = path.replace("{epoch}", str(kwargs["epoch"]))
+    if "{date}" in path:
+        date_str = str(datetime.date(datetime.now()))
+        path = path.replace("{date}", date_str)
+    if "{time}" in path:
+        time_str = str(datetime.time(datetime.now()))[:-7]
+        path = path.replace("{time}", time_str)
     if "{datetime}" in path:
-        datetime_str = str(datetime.now())[:19]
+        datetime_str = str(datetime.now())[:-7]
         datetime_str = datetime_str.replace(" ", "-").replace(":", "-")
         path = path.replace("{datetime}", datetime_str)
 
