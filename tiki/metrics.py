@@ -28,6 +28,10 @@ __all__ = [
     "get_metric",
 ]
 
+# TODO:
+# * precision
+# * recall
+
 # TODO: If RL classes are included:
 # * mean_reward
 # * mean_steps
