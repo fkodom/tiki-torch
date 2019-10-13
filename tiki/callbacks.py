@@ -130,7 +130,7 @@ class EarlyStopping(Callback):
         **kwargs,
     ):
         super().__init__(**kwargs)
-        self.execution_times = ["epoch"]
+        self.execution_times = ["epochs"]
         self.monitor = monitor
         self.patience = patience
         self.min_epochs = max(patience, min_epochs)
@@ -176,7 +176,7 @@ class ModelCheckpoint(Callback):
 
     def on_epoch(self, model: nn.Module):
         path = custom_path(
-            self.path, codename=__codename__, epoch=model.info["epoch"]
+            self.path, codename=__codename__, epoch=model.info["epochs"]
         )
         torch.save(model.state_dict(), path)
         return False
@@ -223,7 +223,7 @@ class TensorBoard(Callback):
     def on_epoch(self, model: nn.Module):
         if self.write_scalars:
             for key, val in model.metrics.items():
-                self.writer.add_scalar(key, val, model.info["epoch"])
+                self.writer.add_scalar(key, val, model.info["epochs"])
 
             self.writer.flush()
 

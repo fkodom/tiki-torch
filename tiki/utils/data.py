@@ -69,7 +69,7 @@ class ListDataLoader(object):
     ):
         super().__init__()
         self.dataset = dataset
-        self.batch_size_ = batch_size
+        self.batch_size = batch_size
         self.shuffle = shuffle
 
         self.batch = 0
@@ -81,6 +81,12 @@ class ListDataLoader(object):
         else:
             self.batch_idx = torch.arange(self.num_batches) * batch_size
 
+    def _get_batch_indices(self):
+        if self.shuffle:
+            self.batch_idx = torch.randperm(self.num_batches) * self.batch_size
+        else:
+            self.batch_idx = torch.arange(self.num_batches) * self.batch_size
+
     def __len__(self):
         return self.num_examples
 
@@ -90,11 +96,13 @@ class ListDataLoader(object):
 
     def __next__(self):
         if self.batch < self.num_batches:
-            max_idx = min(self.batch + self.batch_size_, self.num_examples)
+            max_idx = min(self.batch + self.batch_size, self.num_examples)
             idx = self.batch_idx[self.batch : max_idx]
             self.batch += 1
             return self.dataset[idx]
         else:
+            self._get_batch_indices()
+            self.batch = 0
             raise StopIteration
 
 
