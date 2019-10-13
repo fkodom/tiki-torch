@@ -1,8 +1,9 @@
 torch>=1.0.0
-matplotlib
-tqdm
-codenamize
 tensorboard>=1.14
+gputil
+tqdm
+matplotlib
+codenamize
 future
 sphinx
 sphinx_rtd_theme

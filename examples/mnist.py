@@ -4,15 +4,15 @@ tiki.py
 Example script using `tiki` to train a MNIST handwritten digits classifier.
 """
 
-from tiki.models import Base
 import torch.nn as nn
+from tiki.trainers import BaseTrainer
 
 # Torchvision is not need to install tiki, but is required for this example.
 from torchvision.transforms import ToTensor
 from torchvision.datasets import MNIST
 
 
-class MnistNet(Base):
+class MnistNet(nn.Module):
     def __init__(self):
         super().__init__()
         self.layers = nn.Sequential(
@@ -30,11 +30,13 @@ if __name__ == "__main__":
     va_dataset = MNIST(root="data", train=False, transform=ToTensor(), download=True)
 
     net = MnistNet()
-    net.fit(
+    BaseTrainer().train(
+        net,
         tr_dataset=tr_dataset,
         va_dataset=va_dataset,
         loss="cross_entropy",
         optimizer="adam",
+        gpus=[0],
         metrics=["sparse_cat_acc"],
         callbacks=[
             "terminate_on_nan",
