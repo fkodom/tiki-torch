@@ -1,5 +1,5 @@
 __all__ = [
-    "models",
+    "trainers",
     "callbacks",
     "losses",
     "metrics",
