@@ -5,9 +5,9 @@ Example script using `tiki` to train a MNIST handwritten digits classifier.
 """
 
 import torch.nn as nn
-from tiki.trainers import BaseTrainer
+from tiki.trainers.base import BaseTrainer
 
-# Torchvision is not need to install tiki, but is required for this example.
+# Torchvision is not need to install tiki, but is used here for convenience.
 from torchvision.transforms import ToTensor
 from torchvision.datasets import MNIST
 
