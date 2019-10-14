@@ -1,7 +1,7 @@
 """
-base.py
+trainers.py
 -------
-Parent class for all neural network models in `tiki`.
+Base trainer module for all models in `tiki`.
 """
 
 import os
@@ -43,17 +43,37 @@ def _setup_data_parallel(
     gpus: int or Sequence[int],
     seed: int = None
 ) -> nn.Module:
-    """TODO: Documentation"""
+    """Wraps the input model in either DistributedDataParallel (Linux/Unix) or
+    DataParallel (Windows). If the model has already been wrapped, then just
+    returns the input model.
+
+    NOTE: DistributedDataParallel (Linux/Unix) achieves higher performance,
+    since it uses multiprocessing in the background.
+
+    Parameters
+    ----------
+    model: nn.Module
+        PyTorch module to train
+    gpus: int or Sequence[int]
+        If an `int` is provided, specifies the number of GPUs to use
+        during training.  GPUs are chosen in order of ascending device ID.
+        If a sequence of ints is provided, specifies the exact device IDs of
+        the devices to use during training.
+    seed: int, optional
+        Random seed for the parallel model.  Used only if the input model is not
+        already an instance of DistributedDataParallel or DataParallel.
+    """
     if not (isinstance(model, DP) or isinstance(model, DDP)):
         gpus = get_device_ids(gpus)
+        if seed is None:
+            seed = torch.randint(0, int(1e6), size=(1, )).item()
+        torch.manual_seed(seed)
 
         try:
             from torch.distributed import init_process_group
             os.environ['MASTER_ADDR'] = 'localhost'
             os.environ['MASTER_PORT'] = '12355'
             init_process_group("gloo")
-            if seed is not None:
-                torch.manual_seed(seed)
             model = DDP(model, device_ids=gpus)
         except ImportError:
             model = DP(model, device_ids=gpus)
@@ -70,7 +90,37 @@ def _setup(
     gpus: int or Sequence[int] = (),
     seed: int = None,
 ):
-    """TODO: Documentation"""
+    """Fetches user-specified modules for model training.  Converts the input
+    model to a parallel model, fetches loss/callback/metric functions, and
+    prepares an optimizer for model training.
+
+    Parameters
+    ----------
+    model: nn.Module
+        PyTorch module to train
+    loss: Callable, optional
+        Loss function used for computing training and validation error.
+        **If not specified, this function will raise an exception.**
+    optimizer: optim.Optimizer, optional
+        Optimization algorithm to use for network training.  If not specified,
+        defaults to the class property 'self.optimizer', which will cause
+        an error if it has not been set.
+    metrics: Iterable[str or Callable], optional
+        Iterable of performance metrics to compute for each batch of
+        validation data.  If strings are provided, will attempt to retrieve
+        the corresponding metric function from tiki.metrics.
+    callbacks: Iterable[Callable]
+        Iterable of callable functions to execute after computing outputs,
+        but before updating the network parameters.
+    gpus: int or Sequence[int]
+        If an `int` is provided, specifies the number of GPUs to use
+        during training.  GPUs are chosen in order of ascending device ID.
+        If a sequence of ints is provided, specifies the exact device IDs of
+        the devices to use during training.
+    seed: int, optional
+        Random seed for the parallel model.  Used only if the input model is not
+        already an instance of DistributedDataParallel or DataParallel.
+    """
     if model is None:
         raise ValueError("'model' is a required keyword argument.")
     if loss is None:
@@ -86,7 +136,9 @@ def _setup(
 
 
 def _cleanup():
-    """TODO: Documentation"""
+    """Destroys any process groups spawned by DistributedDataParallel during
+    setup of the parallel model.
+    """
     try:
         from torch.distributed import destroy_process_group
         destroy_process_group()
@@ -95,7 +147,21 @@ def _cleanup():
 
 
 def _batch_to_device(batch: Batch, device: str or torch.device) -> Batch:
-    """TODO: Documentation"""
+    """Pushes a batch of inputs to a particular device.  Designed to handle
+    both Tensor and List[Tensor] inputs.
+
+    Parameters
+    ----------
+    batch: Batch
+        Batch of inputs to push to the device
+    device: str or torch.device
+        Device to move the inputs to
+
+    Returns
+    -------
+    Batch
+        Batch of inputs located on the specified device
+    """
     if isinstance(batch[0], Tensor):
         batch = tuple(x.to(device) for x in batch)
     elif isinstance(batch[0], list):
@@ -107,6 +173,22 @@ def _batch_to_device(batch: Batch, device: str or torch.device) -> Batch:
 
 
 class BaseTrainer(object):
+    """Basic neural network trainer for supervised and unsupervised applications.
+    Supports a wide variety of neural network types, including fully-connected,
+    CNN, and RNN.
+
+    Attributes
+    ----------
+    info: Dict
+        Dictionary of training information, used for logging and callbacks
+    metrics: Dict
+        Dictionary of performance metrics and training/validation losses.
+        Keys are strings, and values are `float` numbers for each metric.
+        All metrics are updated after each training batch.
+    all_metrics: Dict
+        Dictionary of all historical performance metrics.  Historical metrics
+        are logged at the end of each epoch.
+    """
 
     def __init__(self):
         # Training information for logging purposes
@@ -144,16 +226,12 @@ class BaseTrainer(object):
             statements.  Typically only happens on early stopping or Exceptions.
         """
         break_flag = False
-
         for callback in callbacks:
-            if not any(hasattr(callback, ex_time) for ex_time in execution_times):
-                continue
-
-            for execution_time in execution_times:
+            exec_times = [e for e in execution_times if hasattr(callback, e)]
+            for execution_time in exec_times:
                 if hasattr(callback, execution_time):
                     func = getattr(callback, execution_time)
                     break_flag = func(self, **kwargs)
-
                 if break_flag:
                     return True
 
@@ -162,8 +240,8 @@ class BaseTrainer(object):
     def train_on_batch(
         self,
         model: nn.Module,
-        tr_batch: Sequence[Tensor] = (None, None),
-        va_batch: Sequence[Tensor] = (None, None),
+        tr_batch: Sequence[Tensor] = (None, ),
+        va_batch: Sequence[Tensor] = (None, ),
         loss: str or Callable or None = None,
         optimizer: str or optim.Optimizer = "sgd",
         gpus: int or Sequence[int] = (),
@@ -176,6 +254,8 @@ class BaseTrainer(object):
 
         Parameters
         ----------
+        model: nn.Module
+            PyTorch module to train
         tr_batch: Iterable[Tensor]
             Tensors of inputs (one or more) and labels for training.  Labels
             should be provided as the *last* argument to the Dataset.
@@ -189,6 +269,11 @@ class BaseTrainer(object):
             Optimization algorithm to use for network training.  If not specified,
             defaults to the class property 'self.optimizer', which will cause
             an error if it has not been set.
+        gpus: int or Sequence[int]
+            If an `int` is provided, specifies the number of GPUs to use
+            during training.  GPUs are chosen in order of ascending device ID.
+            If a sequence of ints is provided, specifies the exact device IDs of
+            the devices to use during training.
         alpha: float, optional
             Controls how quickly loss values are updated using an IIR filter.
             Range: [0, 1].  Close to 1 gives fast update, but low dependence on
@@ -295,6 +380,8 @@ class BaseTrainer(object):
 
         Parameters
         ----------
+        model: nn.Module
+            PyTorch module to train
         tr_dataset: Dataset
             Dataset of inputs (one or more) and labels for training.  Labels
             should be provided as the *last* argument to the Dataset.
@@ -308,6 +395,11 @@ class BaseTrainer(object):
             Optimization algorithm to use for network training.  If not specified,
             defaults to the class property 'self.optimizer', which will cause
             an error if it has not been set.
+        gpus: int or Sequence[int]
+            If an `int` is provided, specifies the number of GPUs to use
+            during training.  GPUs are chosen in order of ascending device ID.
+            If a sequence of ints is provided, specifies the exact device IDs of
+            the devices to use during training.
         batch_size: int, optional
             Batch size for training.  Default: 25
         shuffle: bool, optional
@@ -438,6 +530,8 @@ class BaseTrainer(object):
 
         Parameters
         ----------
+        model: nn.Module
+            PyTorch module to train
         tr_dataset: Dataset
             Dataset of inputs (one or more) and labels for training.  Labels
             should be provided as the *last* argument to the Dataset.
@@ -451,6 +545,11 @@ class BaseTrainer(object):
             Optimization algorithm to use for network training.  Can be provided
             either as an 'optim.Optimizer' instance, or a string specifier. If
             not specified, defaults to 'optim.Adam' with its default arguments.
+        gpus: int or Sequence[int]
+            If an `int` is provided, specifies the number of GPUs to use
+            during training.  GPUs are chosen in order of ascending device ID.
+            If a sequence of ints is provided, specifies the exact device IDs of
+            the devices to use during training.
         epochs: int, optional
             Number of epochs for training.  Default: 10
         batch_size: int, optional
