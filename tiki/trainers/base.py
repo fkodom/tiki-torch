@@ -27,6 +27,10 @@ __classification__ = "UNCLASSIFIED"
 __all__ = ["BaseTrainer"]
 
 
+# TODO:
+# * multi-GPU loss
+# * multi-GPU performance metrics
+
 # Define batch datatype (used for internal methods).
 # Each batch is an iterable (over train, validation sets) of Tensors.
 # If the inputs have inconsistent sizes, lists of Tensors are used instead.
@@ -174,8 +178,11 @@ class BaseTrainer(object):
 
         if not any(x is None for x in va_batch):
             batch = batch_to_device(va_batch, device)
+            # Allow datasets with only one input Tensor (unsupervised)
+            num_input_tensors = max(1, len(batch) - 1)
             with torch.no_grad():
-                out = dp_model(*batch[:-1])
+                out = dp_model(*batch[:num_input_tensors])
+                # Always pass final Tensor for "labels" (including unsupervised)
                 va_loss = loss(out, batch[-1])
                 metrics_info = {m.__name__: m(out, batch[-1]).item() for m in metrics}
         else:
