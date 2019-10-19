@@ -173,6 +173,9 @@ class ModelCheckpoint(Callback):
     def __init__(self, path: str = os.path.join("models", "{codename}.dict"), **kwargs):
         super().__init__(**kwargs)
         self.path = path
+        directory = os.path.join(*os.path.split(path)[:-1])
+        if not os.path.exists(directory):
+            os.makedirs(directory)
 
     def on_epoch(self, trainer, model: nn.Module):
         path = custom_path(
