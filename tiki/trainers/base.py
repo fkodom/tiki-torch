@@ -67,6 +67,7 @@ class BaseTrainer(object):
 
     def _execute_callbacks(
         self,
+        model: nn.Module,
         callbacks: Iterable[Callback] = (),
         execution_times: Sequence[str] = (),
         **kwargs,
@@ -96,7 +97,7 @@ class BaseTrainer(object):
             for execution_time in exec_times:
                 if hasattr(callback, execution_time):
                     func = getattr(callback, execution_time)
-                    break_flag = func(self, **kwargs)
+                    break_flag = func(self, model, **kwargs)
                 if break_flag:
                     return True
 
@@ -107,7 +108,7 @@ class BaseTrainer(object):
         model: nn.Module,
         tr_batch: Sequence[Tensor] = (None,),
         va_batch: Sequence[Tensor] = (None,),
-        loss: str or Callable or None = None,
+        loss: object = None,
         optimizer: str or optim.Optimizer = "sgd",
         gpus: int or Sequence[int] = (),
         alpha: float = 0.95,
@@ -195,7 +196,9 @@ class BaseTrainer(object):
         tr_loss = loss(out, batch[-1])
 
         # Execute callbacks before model update, and if necessary, stop training
-        if self._execute_callbacks(callbacks=callbacks, execution_times=["on_forward"]):
+        if self._execute_callbacks(
+            model, callbacks=callbacks, execution_times=["on_forward"]
+        ):
             return True
 
         # Compute gradients and update model parameters
@@ -221,7 +224,7 @@ class BaseTrainer(object):
                 self.metrics[key] = alpha * self.metrics[key] + (1 - alpha) * val
 
         return self._execute_callbacks(
-            callbacks=callbacks, execution_times=["on_batch"]
+            model, callbacks=callbacks, execution_times=["on_batch"]
         )
 
     def train_on_epoch(
@@ -229,7 +232,7 @@ class BaseTrainer(object):
         model: nn.Module,
         tr_dataset: Dataset or None = None,
         va_dataset: Dataset or None = None,
-        loss: str or Callable or None = None,
+        loss: object = None,
         optimizer: str or optim.Optimizer = "adam",
         gpus: int or Sequence[int] = (),
         batch_size: int = 20,
@@ -370,15 +373,17 @@ class BaseTrainer(object):
             print(f"{epoch_str} : {desc[:-2]}")
 
         return self._execute_callbacks(
-            callbacks=callbacks, execution_times=["on_epoch"]
+            model, callbacks=callbacks, execution_times=["on_epoch"]
         )
 
+    # TODO: Fix type annotation for `loss`
+    # (Dependent on MyPy type checking)
     def train(
         self,
         model: nn.Module,
         tr_dataset: Dataset or None = None,
         va_dataset: Dataset or None = None,
-        loss: str or Callable or None = None,
+        loss: object = None,
         optimizer: str or optim.Optimizer = "adam",
         gpus: int or Sequence[int] = 0,
         epochs: int = 10,
@@ -459,7 +464,7 @@ class BaseTrainer(object):
             gpus=gpus,
         )
 
-        self._execute_callbacks(callbacks, execution_times=["on_start"])
+        self._execute_callbacks(model, callbacks, execution_times=["on_start"])
 
         for _ in range(epochs):
             break_flag = self.train_on_epoch(
@@ -483,4 +488,6 @@ class BaseTrainer(object):
             if break_flag:
                 break
 
-        self._execute_callbacks(callbacks=callbacks, execution_times=["on_final"])
+        self._execute_callbacks(
+            model, callbacks=callbacks, execution_times=["on_final"]
+        )

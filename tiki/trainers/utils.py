@@ -72,14 +72,14 @@ def _setup_data_parallel(
     ValueError
         If any of the specified GPUs are not available on the local system
     """
-    gpus = get_device_ids(gpus)
-    if len(gpus) == 0 or isinstance(model, DP) or isinstance(model, DDP):
+    if not gpus or isinstance(model, DP) or isinstance(model, DDP):
         dp_model = model
     else:
         # Set the address and port for the cluster (localhost).
         # Only used if DistributedDataParallel is available (Linux/Unix).
         os.environ["MASTER_ADDR"] = "localhost"
         os.environ["MASTER_PORT"] = "12355"
+        gpus = get_device_ids(gpus)
 
         if seed is None:
             seed = torch.randint(0, int(1e6), size=(1,)).item()

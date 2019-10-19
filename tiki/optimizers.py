@@ -61,7 +61,13 @@ def get_optimizer(
                 f"Optimizer '{optimizer}' not recognized.  "
                 f"Allowed values: {list(optimizer_dict.keys())}"
             )
-        optimizer = optimizer_dict[optimizer](parameters, **kwargs)
+        else:
+            optimizer = optimizer_dict[optimizer](parameters, **kwargs)
+    elif not isinstance(optimizer, optim.Optimizer):
+        raise TypeError(
+            f"Optimizer can have types: [str, Optimizer].  "
+            f"Found: {type(optimizer)}."
+        )
 
     return optimizer
 
