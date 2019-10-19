@@ -1,5 +1,9 @@
+from tiki.base import Trainer, Tester
+
+
 __all__ = [
-    "trainers",
+    "Trainer",
+    "Tester",
     "callbacks",
     "losses",
     "metrics",

@@ -5,9 +5,9 @@ Example script using `tiki` to train a MNIST handwritten digits classifier.
 """
 
 import torch.nn as nn
-from tiki.trainers.base import BaseTrainer
+from tiki import Trainer, Tester
 
-# Torchvision is not need to install tiki, but is used here for convenience.
+# Torchvision not needed for tiki, but used here for convenience.
 from torchvision.transforms import ToTensor
 from torchvision.datasets import MNIST
 
@@ -26,16 +26,17 @@ class MnistNet(nn.Module):
 
 
 if __name__ == "__main__":
+    net = MnistNet()
     tr_dataset = MNIST(root="data", train=True, transform=ToTensor(), download=True)
     va_dataset = MNIST(root="data", train=False, transform=ToTensor(), download=True)
 
-    net = MnistNet()
-    BaseTrainer().train(
+    Trainer().train(
         net,
         tr_dataset=tr_dataset,
         va_dataset=va_dataset,
         loss="cross_entropy",
         optimizer="adam",
+        epochs=1,
         gpus=[0],
         metrics=["sparse_cat_acc"],
         callbacks=[
@@ -44,4 +45,12 @@ if __name__ == "__main__":
             "model_checkpoint",
             "tensorboard"
         ]
+    )
+
+    Tester().test(
+        net,
+        te_dataset=va_dataset,
+        loss="cross_entropy",
+        gpus=[0],
+        metrics=["sparse_cat_acc"],
     )
