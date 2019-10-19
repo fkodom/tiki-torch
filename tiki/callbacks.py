@@ -86,6 +86,8 @@ class TerminateOnNan(Callback):
     def on_forward(self, trainer, model: nn.Module):
         check_nan_keys = ["tr_loss", "va_loss"]
         for key in check_nan_keys:
+            if key not in trainer.metrics.keys():
+                continue
             val = trainer.metrics[key]
             if isnan(val) or isinf(val):
                 if self.verbose:
@@ -141,10 +143,7 @@ class EarlyStopping(Callback):
         if self.monitor in trainer.all_metrics.keys():
             monitor = trainer.all_metrics[self.monitor]
         else:
-            raise ValueError(
-                f"Monitor value {self.monitor} unavailable."
-                f"Available: {list(model.all_metrics.keys())}"
-            )
+            monitor = []
 
         if len(monitor) > self.min_epochs and all(
             x + self.min_delta > monitor[-self.patience - 1]
@@ -153,8 +152,8 @@ class EarlyStopping(Callback):
             if self.verbose:
                 print("\nLoss stopped decreasing. Terminating training.")
             return True
-        else:
-            return False
+
+        return False
 
 
 class ModelCheckpoint(Callback):
