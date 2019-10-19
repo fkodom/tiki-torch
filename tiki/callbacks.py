@@ -13,6 +13,7 @@ from time import time
 import torch
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
+from torch.nn.parallel import DataParallel, DistributedDataParallel
 from codenamize import codenamize
 
 from tiki.utils.path import custom_path
@@ -82,10 +83,10 @@ class TerminateOnNan(Callback):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def on_forward(self, model: nn.Module):
+    def on_forward(self, trainer, model: nn.Module):
         check_nan_keys = ["tr_loss", "va_loss"]
         for key in check_nan_keys:
-            val = model.metrics[key]
+            val = trainer.metrics[key]
             if isnan(val) or isinf(val):
                 if self.verbose:
                     print(f"\nEncountered {val} value.  Terminating training.")
@@ -136,9 +137,9 @@ class EarlyStopping(Callback):
         self.min_epochs = max(patience, min_epochs)
         self.min_delta = min_delta
 
-    def on_epoch(self, model: nn.Module):
-        if self.monitor in model.all_metrics.keys():
-            monitor = model.all_metrics[self.monitor]
+    def on_epoch(self, trainer, model: nn.Module):
+        if self.monitor in trainer.all_metrics.keys():
+            monitor = trainer.all_metrics[self.monitor]
         else:
             raise ValueError(
                 f"Monitor value {self.monitor} unavailable."
@@ -174,11 +175,14 @@ class ModelCheckpoint(Callback):
         super().__init__(**kwargs)
         self.path = path
 
-    def on_epoch(self, model: nn.Module):
+    def on_epoch(self, trainer, model: nn.Module):
         path = custom_path(
-            self.path, codename=__codename__, epoch=model.info["epochs"]
+            self.path, codename=__codename__, epoch=trainer.info["epochs"]
         )
-        torch.save(model.state_dict(), path)
+        if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+            torch.save(model.module.state_dict(), path)
+        else:
+            torch.save(model.state_dict(), path)
         return False
 
 
@@ -213,17 +217,17 @@ class TensorBoard(Callback):
             **kwargs,
         )
 
-    def on_start(self, model: nn.Module):
+    def on_start(self, trainer, model: nn.Module):
         if self.write_graph:
             self.writer.add_graph(
                 model=model,
                 input_to_model=model.info["input_to_model"]
             )
 
-    def on_epoch(self, model: nn.Module):
+    def on_epoch(self, trainer, model: nn.Module):
         if self.write_scalars:
-            for key, val in model.metrics.items():
-                self.writer.add_scalar(key, val, model.info["epochs"])
+            for key, val in trainer.metrics.items():
+                self.writer.add_scalar(key, val, trainer.info["epochs"])
 
             self.writer.flush()
 

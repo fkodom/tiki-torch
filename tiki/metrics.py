@@ -412,10 +412,14 @@ def get_metric(metric: str or Callable) -> Callable:
         if metric not in metric_dict.keys():
             raise ValueError(
                 f"Metric '{metric}' not recognized.  "
-                f"Allowed values: {list(metric_dict.keys())}"
+                f"Allowed strings: {list(metric_dict.keys())}"
             )
         else:
             metric = metric_dict[metric]
+    elif not isinstance(metric, Callable):
+        raise TypeError(
+            f"Metric can have types: [str, Callable].  Found: {type(metric)}."
+        )
 
     return metric
 

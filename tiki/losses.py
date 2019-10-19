@@ -80,9 +80,13 @@ def get_loss(loss: str or Callable) -> Callable:
         if loss not in loss_dict.keys():
             raise ValueError(
                 f"Loss function '{loss}' not recognized.  "
-                f"Allowed values: {list(loss_dict.keys())}"
+                f"Allowed strings: {list(loss_dict.keys())}"
             )
         else:
             loss = loss_dict[loss]()
+    elif not isinstance(loss, Callable):
+        raise TypeError(
+            f"Loss can have types: [str, Callable].  Found: {type(loss)}."
+        )
 
     return loss
