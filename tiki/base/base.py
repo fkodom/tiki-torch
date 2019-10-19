@@ -5,9 +5,7 @@ Base trainer module for all models in `tiki`.
 """
 
 from typing import Iterable, Sequence, Callable, List
-from collections import OrderedDict
 
-from tqdm import tqdm
 import torch
 from torch import Tensor
 import torch.nn as nn
