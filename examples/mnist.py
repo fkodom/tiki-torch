@@ -47,6 +47,8 @@ if __name__ == "__main__":
         ]
     )
 
+    # Not really testing anything, since we already used the validation
+    # set for early stopping.  But just for demonstration purposes...
     Tester().test(
         net,
         te_dataset=va_dataset,
