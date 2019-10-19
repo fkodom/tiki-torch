@@ -41,5 +41,7 @@ if __name__ == "__main__":
         callbacks=[
             "terminate_on_nan",
             "early_stopping",
+            "model_checkpoint",
+            "tensorboard"
         ]
     )
