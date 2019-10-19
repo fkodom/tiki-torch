@@ -152,9 +152,10 @@ def get_data_loaders(
     num_batches = len(data_loaders[0])
 
     for i in range(1, num_datasets):
-        if datasets[i] is None:
-            break
-        new_batch_size = max(1, len(datasets[i]) // num_batches)
-        data_loaders.append(get_data_loader(datasets[i], batch_size=new_batch_size))
+        if not datasets[i]:
+            data_loaders.append([(None, ) for _ in range(num_batches)])
+        else:
+            new_batch_size = max(1, len(datasets[i]) // num_batches)
+            data_loaders.append(get_data_loader(datasets[i], batch_size=new_batch_size))
 
     return tuple(data_loaders)

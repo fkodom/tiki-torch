@@ -31,7 +31,7 @@ optimizer_dict = {
 
 
 def get_optimizer(
-    optimizer: str or optim.Optimizer, parameters: Iterator[Parameter], **kwargs
+    optimizer: str or optim.Optimizer, parameters: Iterator[Parameter]
 ) -> optim.Optimizer:
     """Accepts a string or Optimizer, and returns an instantiated Optimizer for
     use during model training.  (Must accept both strings and Optimizers to
@@ -62,7 +62,7 @@ def get_optimizer(
                 f"Allowed values: {list(optimizer_dict.keys())}"
             )
         else:
-            optimizer = optimizer_dict[optimizer](parameters, **kwargs)
+            optimizer = optimizer_dict[optimizer](parameters, lr=1e-3)
     elif not isinstance(optimizer, optim.Optimizer):
         raise TypeError(
             f"Optimizer can have types: [str, Optimizer].  "
