@@ -189,7 +189,7 @@ class Trainer(BaseTrainTest):
             prog_bar.close()
         elif epoch % verbosity == 0:
             desc = ", ".join([f"{k}: {v:+.3e}" for k, v in self.metrics.items()])
-            print(f"{epoch_str} : {desc[:-2]}")
+            print(f"{epoch_str} : {desc}")
 
         return self._execute_callbacks(
             model, callbacks=callbacks, execution_times=["on_epoch"]
