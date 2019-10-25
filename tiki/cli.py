@@ -23,6 +23,5 @@ def main():
         except KeyboardInterrupt:
             pass
     elif command == "docs":
-        print(path.isdir(path.join(docs_dir, "_build", "html")))
-        call([path.join(docs_dir, "make.bat"), "html"], stdout=DEVNULL) # stderr=DEVNULL)
+        call([path.join(docs_dir, "make.bat"), "html"], stdout=DEVNULL, stderr=DEVNULL)
         open_new_tab(path.realpath(path.join(docs_dir, "docs.html")))
