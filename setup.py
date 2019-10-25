@@ -17,6 +17,9 @@ setup(
     author="Frank Odom",
     author_email="frank.odom@radiancetech.com",
     packages=find_packages(),
+    package_data={"docs": ["*.bat"]},
+    include_package_data=True,
+    entry_points={"console_scripts": ["tiki=tiki.cli:main"]},
     keywords="torch neural network train PyTorch",
     classifiers=[
         "Development Status :: 3 - Alpha",
