@@ -1,5 +1,4 @@
 import os
-from subprocess import call, DEVNULL
 from setuptools import setup, find_packages
 
 
@@ -8,8 +7,6 @@ with open(os.path.join(local_path, "requirements.txt")) as f:
     install_reqs = [r for r in f.read().split("\n") if len(r) > 0]
 with open(os.path.join(local_path, "README.md"), "r") as f:
     long_description = f.read()
-
-# call([os.path.join("docs", "make.bat"), "html"], stdout=DEVNULL)
 
 setup(
     name="tiki",
