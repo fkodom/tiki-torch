@@ -5,6 +5,7 @@ Base trainer module for all models in `tiki`.
 """
 
 from typing import Iterable, Sequence, Callable, List
+from itertools import chain
 
 from tqdm import tqdm
 from torch import Tensor
@@ -12,10 +13,10 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import Dataset
 
-from tiki.base.base import BaseTrainTest
-from tiki.base.utils import setup
 from tiki.callbacks import compile_callbacks, Callback
 from tiki.utils.data import get_data_loaders
+from tiki.base.utils import setup
+from tiki.base.base import BaseTrainTest
 
 
 __author__ = "Frank Odom"
@@ -180,10 +181,10 @@ class Trainer(BaseTrainTest):
                 prog_bar.update()
                 prog_bar.set_postfix_str(postfix)
 
-        for key, val in self.metrics.items():
-            if key not in self.all_metrics.keys():
-                self.all_metrics[key] = []
-            self.all_metrics[key].append(val)
+        for key, val in chain(self.info.items(), self.metrics.items()):
+            if key not in self.history.keys():
+                self.history[key] = []
+            self.history[key].append(val)
 
         if progress_bar:
             prog_bar.close()

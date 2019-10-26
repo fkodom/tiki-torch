@@ -9,13 +9,17 @@ import os
 from typing import Iterable, List
 from math import isnan, isinf
 from time import time
+import pickle
 
 import torch
+from torch import Tensor
 import torch.nn as nn
 from torch.utils.tensorboard import SummaryWriter
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 from codenamize import codenamize
+from torchviz import make_dot
 
+from tiki.callbacks.base import Callback
 from tiki.utils.path import custom_path
 
 
@@ -25,47 +29,14 @@ __email__ = "frank.odom@radiancetech.com"
 __classification__ = "UNCLASSIFIED"
 __codename__ = codenamize(str(time()), join="", capitalize=True)
 __all__ = [
-    "Callback",
     "TerminateOnNan",
     "EarlyStopping",
     "ModelCheckpoint",
     "TensorBoard",
+    "TikiHut",
     "get_callback",
     "compile_callbacks",
 ]
-
-
-class Callback(object):
-    """Base class for all callback functions.  Callbacks are functions that are
-    automatically executed during network training.
-
-    Execution Times
-    ---------------
-    Callback execution time is determined from the defined class methods.
-    Each callback can define any number of execution methods, which perform
-    independent functions during model training.  Method names and their
-    corresponding execution times are listed below.
-
-    * **on_start**: Before any training begins
-    * **on_end**: Last executed before training terminates
-    * **on_epoch**: After each complete epoch of training
-    * **on_batch**: After each complete batch during training epochs
-    * **on_forward**: After computing outputs for each batch, but before updating parameters
-
-    Attributes
-    ----------
-    verbose: bool (optional)
-        If True, prints a message to the console when an action is performed.
-        Nothing is printed if the callback does nothing.  Default: True
-    """
-
-    def __init__(self, verbose: bool = True):
-        super().__init__()
-        self.execution_times = []
-        self.verbose = verbose
-
-    def __repr__(self) -> str:
-        return f"{self.__class__.__name__}()"
 
 
 class TerminateOnNan(Callback):
@@ -83,7 +54,7 @@ class TerminateOnNan(Callback):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def on_forward(self, trainer, model: nn.Module):
+    def on_forward(self, trainer: object = None, **kwargs):
         check_nan_keys = ["tr_loss", "va_loss"]
         for key in check_nan_keys:
             if key not in trainer.metrics.keys():
@@ -139,9 +110,9 @@ class EarlyStopping(Callback):
         self.min_epochs = max(patience, min_epochs)
         self.min_delta = min_delta
 
-    def on_epoch(self, trainer, model: nn.Module):
-        if self.monitor in trainer.all_metrics.keys():
-            monitor = trainer.all_metrics[self.monitor]
+    def on_epoch(self, trainer: object = None, **kwargs):
+        if self.monitor in trainer.history.keys():
+            monitor = trainer.history[self.monitor]
         else:
             monitor = []
 
@@ -177,7 +148,12 @@ class ModelCheckpoint(Callback):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    def on_epoch(self, trainer, model: nn.Module):
+    def on_epoch(
+            self,
+            trainer: object = None,
+            model: nn.Module = None,
+            **kwargs
+    ):
         path = custom_path(
             self.path, codename=__codename__, epoch=trainer.info["epochs"]
         )
@@ -219,14 +195,14 @@ class TensorBoard(Callback):
             **kwargs,
         )
 
-    def on_start(self, trainer, model: nn.Module):
+    def on_start(self, model: nn.Module = None, **kwargs):
         if self.write_graph:
             self.writer.add_graph(
                 model=model,
                 input_to_model=model.info["input_to_model"]
             )
 
-    def on_epoch(self, trainer, model: nn.Module):
+    def on_epoch(self, trainer: object = None, **kwargs):
         if self.write_scalars:
             for key, val in trainer.metrics.items():
                 self.writer.add_scalar(key, val, trainer.info["epochs"])
@@ -236,11 +212,69 @@ class TensorBoard(Callback):
         return False
 
 
+class TikiHut(Callback):
+    """Logs training/validation data to `tiki hut` for visualization.
+
+    Parameters
+    ----------
+    path: str (optional)
+        Path to the log directory for this run.  If none is provided, it will be
+        placed in a subfolder of 'logs' using a random codename.
+    verbose: bool (optional)
+        If True, prints a message to the console when an action is performed.
+        Nothing is printed if the callback does nothing.  Default: True
+    """
+
+    def __init__(
+        self,
+        path: str = os.path.join("logs", "{codename}"),
+        write_scalars: bool = True,
+        write_graph: bool = True,
+        **kwargs,
+    ):
+        super().__init__(**kwargs)
+        path = custom_path(path, codename=__codename__, **kwargs)
+        self.path = path + ".hut"
+        self.write_scalars = write_scalars
+        self.write_graph = write_graph
+        self.name = os.path.split(path)[-1]
+
+        directory = os.path.join(*os.path.split(path)[:-1])
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+
+    def on_batch(self, model: nn.Module = None, outputs: Tensor = None, **kwargs):
+        if self.write_graph:
+            if os.path.exists(self.path):
+                log = pickle.load(open(self.path, "rb"))
+            else:
+                log = {"name": self.name}
+            if "graph" not in log.keys():
+                log["graph"] = make_dot(outputs, params=dict(model.named_parameters()))
+
+            pickle.dump(log, open(self.path, "wb"))
+
+            return False
+
+    def on_epoch(self, trainer: object = None, **kwargs):
+        if self.write_scalars:
+            if os.path.exists(self.path):
+                log = pickle.load(open(self.path, "rb"))
+            else:
+                log = {"name": self.name}
+
+            log["history"] = trainer.history
+            pickle.dump(log, open(self.path, "wb"))
+
+            return False
+
+
 callback_dict = {
     "terminate_on_nan": TerminateOnNan,
     "early_stopping": EarlyStopping,
     "model_checkpoint": ModelCheckpoint,
     "tensorboard": TensorBoard,
+    "tiki_hut": TikiHut,
 }
 
 

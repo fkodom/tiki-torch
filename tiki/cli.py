@@ -1,4 +1,4 @@
-from os import path
+from os import path, getcwd
 import argparse
 from subprocess import call, DEVNULL
 from webbrowser import open_new_tab
@@ -17,9 +17,11 @@ def main():
     args = parser.parse_args()
 
     command = args.subprocess.lower()
+    logdir = path.join(getcwd(), args.logdir)
+    print(logdir)
     if command == "hut":
         try:
-            call(["streamlit", "run", path.join(tiki_dir, "hut", "main.py")])
+            call(["streamlit", "run", path.join(tiki_dir, "hut", "main.py"), logdir])
         except KeyboardInterrupt:
             pass
     elif command == "docs":
