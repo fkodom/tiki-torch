@@ -1,40 +1,75 @@
-import streamlit as st
-import torch
-from torchviz import make_dot
+import argparse
+from math import ceil
 
+import streamlit as st
 import plotly.graph_objects as go
 
+from tiki.hut.data import get_logs_data
+from tiki.hut.config import figure_config
+
 
 """
-# Streamlit Demo
+# Tiki Hut
 
-Example for how to use the `streamlit` Python API.
+Your island headquarters and training visualization dashboard.
 """
 
-net1 = torch.nn.Linear(10, 5)
-net2 = torch.nn.Sequential(
-    torch.nn.Linear(10, 5),
-    torch.nn.Linear(5, 2),
-)
-models = {"net1": net1, "net2": net2}
+parser = argparse.ArgumentParser()
+parser.add_argument("logdir")
+logdir = parser.parse_args().logdir
 
-page = st.selectbox("Viewing: ", ("Model Graphs", "Metrics", "Third"))
+logs = get_logs_data(logdir)
+log_names = tuple(log["name"] for log in logs)
 
-if page == "Model Graphs":
-    model = st.selectbox("Model:", list(models.keys()))
-    net = models[model]
-    out = net(torch.randn(20, 10)).mean()
-    st.write(make_dot(out, params=dict(net.named_parameters())))
+if len(logs) > 0:
+    page = st.selectbox("Select: ", ("Graphs", "Scalars", "Third"))
 
-if page == "Metrics":
-    loss_checkbox = st.checkbox("Show losses:", value=True)
-    if loss_checkbox:
-        fig = go.Figure()
-        fig.add_trace(
-            go.Scatter(
-                x=list(range(1, 11)),
-                y=[1 / (z ** 2) for z in range(1, 11)],
+    if page == "Graphs":
+        log_name = st.selectbox("Model:", log_names)
+        for log in logs:
+            if log["name"] == log_name and "graph" in log.keys():
+                st.write(log["graph"])
+
+    if page == "Scalars":
+        all_scalars = [scalar for log in logs for scalar in log["history"].keys()]
+        scalars = [x for x in set(all_scalars) if x not in ["epochs", "batches"]]
+        show_legend = st.checkbox("Show legend", value=True)
+
+        nrow = int(len(scalars) ** 0.5)
+        ncol = ceil(len(scalars) / nrow)
+
+        for scalar in scalars:
+            fig = go.Figure()
+            for log in logs:
+                if "history" in log.keys():
+                    history = log["history"]
+                else:
+                    continue
+
+                if scalar in history.keys():
+                    fig.add_trace(
+                        go.Scatter(
+                            x=history["epochs"],
+                            y=history[scalar],
+                            name=log["name"],
+                            hovertext=[
+                                f"{log['name']}: epoch={epoch}, {scalar}={x:.2e}"
+                                for epoch, x in zip(history["epochs"], history[scalar])
+                            ],
+                            hoverinfo="text",
+                        )
+                    )
+            fig.update_layout(
+                **figure_config,
+                showlegend=show_legend,
+                title=scalar,
+                xaxis=go.layout.XAxis(title="epoch"),
+                yaxis=go.layout.YAxis(title=scalar),
             )
-        )
-        fig.update_layout(margin={"l": 30, "r": 30, "t": 30, "b": 30})
-        st.write(fig)
+            st.write(fig)
+else:
+    """
+    ### Found no logs to display.  
+    
+    First, train a model using the `TikiHut` callback.
+    """

@@ -46,7 +46,7 @@ class BaseTrainTest(object):
         Dictionary of performance metrics and training/validation losses.
         Keys are strings, and values are `float` numbers for each metric.
         All metrics are updated after each training batch.
-    all_metrics: Dict
+    history: Dict
         Dictionary of all historical performance metrics.  Historical metrics
         are logged at the end of each epoch.
     """
@@ -56,11 +56,11 @@ class BaseTrainTest(object):
         self.info = {"epochs": 0, "batches": 0}
         # Current and historical performance metrics
         self.metrics = {}
-        self.all_metrics = {}
+        self.history = {}
 
     def _execute_callbacks(
         self,
-        model: nn.Module,
+        model: nn.Module = None,
         callbacks: Iterable[Callback] = (),
         execution_times: Sequence[str] = (),
         **kwargs,
@@ -90,7 +90,7 @@ class BaseTrainTest(object):
             for execution_time in exec_times:
                 if hasattr(callback, execution_time):
                     func = getattr(callback, execution_time)
-                    break_flag = func(self, model, **kwargs)
+                    break_flag = func(trainer=self, model=model, **kwargs)
                 if break_flag:
                     return True
 
@@ -191,7 +191,7 @@ class BaseTrainTest(object):
 
             # Execute callbacks before model update, and if necessary, stop training
             if self._execute_callbacks(
-                model, callbacks=callbacks, execution_times=["on_forward"]
+                model=model, callbacks=callbacks, execution_times=["on_forward"]
             ):
                 return True
 
@@ -199,6 +199,8 @@ class BaseTrainTest(object):
             tr_loss.backward()
             optimizer.step()
             metrics_info["tr_loss"] = tr_loss.detach().item()
+        else:
+            out = torch.tensor(0.0)
 
         for key, val in metrics_info.items():
             if key not in self.metrics.keys():
@@ -207,5 +209,8 @@ class BaseTrainTest(object):
                 self.metrics[key] = alpha * self.metrics[key] + (1 - alpha) * val
 
         return self._execute_callbacks(
-            model, callbacks=callbacks, execution_times=["on_batch"]
+            model=model,
+            callbacks=callbacks,
+            execution_times=["on_batch"],
+            outputs=out,
         )
