@@ -1,11 +1,12 @@
 torch>=1.0.0
 tensorboard>=1.14
 gputil
+plotly
+streamlit
 tqdm
-matplotlib
 codenamize
 future
-streamlit
 torchviz
 sphinx
 sphinx_rtd_theme
+recommonmark
