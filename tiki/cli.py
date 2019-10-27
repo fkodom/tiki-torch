@@ -18,7 +18,6 @@ def main():
 
     command = args.subprocess.lower()
     logdir = path.join(getcwd(), args.logdir)
-    print(logdir)
     if command == "hut":
         try:
             call(["streamlit", "run", path.join(tiki_dir, "hut", "main.py"), logdir])

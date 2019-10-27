@@ -12,7 +12,7 @@ Batch = Sequence[Tensor or List[Tensor]]
 
 
 def get_device_ids(gpus: int or Sequence[int]):
-    """TODO: Documentation"""
+    """Gets a list of IDs for devices that will be used during model training."""
     available = getAvailable()
     if isinstance(gpus, int):
         return available[:gpus]

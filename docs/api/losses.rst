@@ -1,6 +1,6 @@
 
-losses
-======
+tiki.losses
+===========
 
 .. module:: tiki.losses
 

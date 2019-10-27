@@ -1,6 +1,6 @@
 
-metrics
-=======
+tiki.metrics
+============
 
 .. module:: tiki.metrics
 

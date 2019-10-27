@@ -1,6 +1,6 @@
 
-callbacks
-=========
+tiki.callbacks
+==============
 
 .. module:: tiki.callbacks
 
@@ -17,6 +17,9 @@ callbacks
    :members:
 
 .. autoclass:: TensorBoard
+   :members:
+
+.. autoclass:: TikiHut
    :members:
 
 .. autofunction:: get_callback

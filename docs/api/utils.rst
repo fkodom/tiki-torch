@@ -1,6 +1,8 @@
-utils
-=====
+tiki.utils
+==========
 
-.. autofunction:: tiki.utils.model.from_module
+.. autofunction:: tiki.utils.get_device_ids
 
-.. autofunction:: tiki.utils.path.custom_path
+.. autofunction:: tiki.utils.get_module_device
+
+.. autofunction:: tiki.utils.custom_path

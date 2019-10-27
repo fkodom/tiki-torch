@@ -5,9 +5,10 @@ API
 .. toctree::
    :maxdepth: 2
 
-   api/models.rst
-   api/callbacks.rst
+   api/tiki.rst
    api/losses.rst
    api/metrics.rst
+   api/optimizers.rst
+   api/callbacks.rst
    api/utils.rst
    api/utils_data.rst

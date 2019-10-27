@@ -5,6 +5,16 @@ Tiki
 Train your neural networks on island time. 🏄🌴🌞🍹.
 
 
+Contents
+--------
+
+.. toctree::
+   :maxdepth: 2
+
+   tutorials.rst
+   api.rst
+
+
 About
 -----
 
@@ -29,17 +39,6 @@ Tiki nearly eliminates the need for boilerplate code, and enables faster experim
     * Execute and train models `faster than Keras <https://wrosinski.github.io/deep-learning-frameworks/>`_
     * Print or set breakpoints from within a model
     * Simplified code debugging
-
-
-Contents
---------
-
-.. toctree::
-   :maxdepth: 2
-
-   about.rst
-   tutorials.rst
-   api.rst
 
 
 Indices and tables
