@@ -6,6 +6,7 @@ streamlit
 tqdm
 codenamize
 future
+filelock
 torchviz
 sphinx
 sphinx_rtd_theme

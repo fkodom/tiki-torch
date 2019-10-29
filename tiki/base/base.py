@@ -5,6 +5,8 @@ Base trainer module for all models in `tiki`.
 """
 
 from typing import Iterable, Sequence, Callable, List
+from itertools import chain
+from datetime import datetime
 
 import torch
 from torch import Tensor
@@ -22,10 +24,6 @@ __email__ = "frank.odom@radiancetech.com"
 __classification__ = "UNCLASSIFIED"
 __all__ = ["BaseTrainTest"]
 
-
-# TODO:
-# * multi-GPU loss
-# * multi-GPU performance metrics
 
 # Define batch datatype (used for internal methods).
 # Each batch is an iterable (over train, validation sets) of Tensors.
@@ -53,10 +51,34 @@ class BaseTrainTest(object):
 
     def __init__(self):
         # Training information for logging purposes
-        self.info = {"epochs": 0, "batches": 0}
+        self.info = {"epochs": 0, "batches": 0, "time": datetime.now()}
         # Current and historical performance metrics
         self.metrics = {}
         self.history = {}
+        self.hyperparams = {}
+
+    def _log_hyperparams(
+        self,
+        batch: Sequence[Tensor] = (None,),
+        loss: object = None,
+        optimizer: optim.Optimizer = None,
+        gpus: int or Sequence[int] = (),
+        metrics: Iterable[Callable] = (),
+        callbacks: Iterable[Callback] = (),
+    ):
+        hyperparams = {
+            "batch_size": batch[0].shape[0],
+            "loss": loss,
+            "optimizer": optimizer.__class__.__name__,
+            "gpus": gpus,
+            "metrics": [metric.__name__ for metric in metrics],
+            "callbacks": callbacks,
+        }
+        optimizer_hyperparams = optimizer.state_dict()["param_groups"][0]
+        self.hyperparams = {
+            key: val for key, val in
+            chain(hyperparams.items(), optimizer_hyperparams.items())
+        }
 
     def _execute_callbacks(
         self,
@@ -161,6 +183,7 @@ class BaseTrainTest(object):
         """
         device = get_module_device(model)
         self.info["batches"] += 1
+        self.info["time"] = datetime.now()
         dp_model, loss, optimizer, callbacks, metrics = setup(
             model=model,
             loss=loss,
@@ -169,6 +192,21 @@ class BaseTrainTest(object):
             metrics=metrics,
             gpus=gpus,
         )
+
+        if not self.hyperparams:
+            if tr_batch[0] is not None:
+                batch = tr_batch
+            else:
+                batch = va_batch
+
+            self._log_hyperparams(
+                batch=batch,
+                loss=loss,
+                optimizer=optimizer,
+                gpus=gpus,
+                metrics=metrics,
+                callbacks=callbacks,
+            )
 
         if not any(x is None for x in va_batch):
             batch = batch_to_device(va_batch, device)
