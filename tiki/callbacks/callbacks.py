@@ -20,6 +20,7 @@ from codenamize import codenamize
 from torchviz import make_dot
 
 from tiki.callbacks.base import Callback
+from tiki.callbacks.utils import locked_log_save
 from tiki.utils.path import custom_path
 
 
@@ -161,6 +162,7 @@ class ModelCheckpoint(Callback):
             torch.save(model.module.state_dict(), path)
         else:
             torch.save(model.state_dict(), path)
+
         return False
 
 
@@ -230,6 +232,7 @@ class TikiHut(Callback):
         path: str = os.path.join("logs", "{codename}"),
         write_scalars: bool = True,
         write_graph: bool = True,
+        write_hyperparams: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -237,24 +240,34 @@ class TikiHut(Callback):
         self.path = path + ".hut"
         self.write_scalars = write_scalars
         self.write_graph = write_graph
+        self.write_hyperparams = write_hyperparams
         self.name = os.path.split(path)[-1]
 
         directory = os.path.join(*os.path.split(path)[:-1])
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    def on_batch(self, model: nn.Module = None, outputs: Tensor = None, **kwargs):
-        if self.write_graph:
+    def on_batch(
+        self,
+        trainer: object = None,
+        model: nn.Module = None,
+        outputs: Tensor = None,
+        **kwargs
+    ):
+        if self.write_graph or self.write_hyperparams:
             if os.path.exists(self.path):
                 log = pickle.load(open(self.path, "rb"))
             else:
                 log = {"name": self.name}
+
             if "graph" not in log.keys():
                 log["graph"] = make_dot(outputs, params=dict(model.named_parameters()))
+            if "hyperparams" not in log.keys():
+                log["hyperparams"] = trainer.hyperparams
 
-            pickle.dump(log, open(self.path, "wb"))
+            locked_log_save(log, self.path)
 
-            return False
+        return False
 
     def on_epoch(self, trainer: object = None, **kwargs):
         if self.write_scalars:
@@ -264,9 +277,9 @@ class TikiHut(Callback):
                 log = {"name": self.name}
 
             log["history"] = trainer.history
-            pickle.dump(log, open(self.path, "wb"))
+            locked_log_save(log, self.path)
 
-            return False
+        return False
 
 
 callback_dict = {
