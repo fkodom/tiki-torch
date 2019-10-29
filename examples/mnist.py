@@ -36,14 +36,14 @@ if __name__ == "__main__":
         va_dataset=va_dataset,
         loss="cross_entropy",
         optimizer="adam",
-        epochs=1,
+        epochs=3,
         gpus=[0],
         metrics=["sparse_cat_acc"],
         callbacks=[
             "terminate_on_nan",
             "early_stopping",
             "model_checkpoint",
-            "tensorboard"
+            "tiki_hut"
         ]
     )
 
