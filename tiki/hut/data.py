@@ -1,7 +1,6 @@
 from typing import List
 import os
 import pickle
-from contextlib import redirect_stdout
 
 from filelock import SoftFileLock
 
@@ -24,14 +23,16 @@ def _update_log_names(logs: List[dict], log_files: List[str]) -> List[dict]:
         name = file_name[:-4]  # remove '.hut' file ending
         log["name"] = name
 
+    return logs
 
-def get_logs_data(logdir: str = "logs") -> List[dict]:
+
+def load_logs_data(logdir: str = "logs") -> List[dict]:
     lock_file = os.path.join(logdir, "logs.lock")
     log_files = _get_log_files(logdir=logdir)
 
     with SoftFileLock(lock_file):
         logs = [pickle.load(open(file, "rb")) for file in log_files]
 
-    _update_log_names(logs, log_files)
+    logs = _update_log_names(logs, log_files)
 
     return logs

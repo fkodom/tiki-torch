@@ -309,5 +309,5 @@ class Trainer(BaseTrainTest):
                 break
 
         self._execute_callbacks(
-            model, callbacks=callbacks, execution_times=["on_final"]
+            model, callbacks=callbacks, execution_times=["on_end"]
         )
