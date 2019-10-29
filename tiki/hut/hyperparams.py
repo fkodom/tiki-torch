@@ -5,7 +5,7 @@ import streamlit as st
 from pandas import DataFrame
 
 
-def get_hyperparams(logs: List[Dict]):
+def write_hyperparams(logs: List[Dict]):
     for log in logs:
         if "hyperparams" not in log.keys():
             log["hyperparams"] = {}

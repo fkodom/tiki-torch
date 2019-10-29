@@ -233,14 +233,16 @@ class TikiHut(Callback):
         write_scalars: bool = True,
         write_graph: bool = True,
         write_hyperparams: bool = True,
+        write_state_dict: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
         path = custom_path(path, codename=__codename__, **kwargs)
         self.path = path + ".hut"
         self.write_scalars = write_scalars
-        self.write_graph = write_graph
         self.write_hyperparams = write_hyperparams
+        self.write_graph = write_graph
+        self.write_state_dict = write_state_dict
         self.name = os.path.split(path)[-1]
 
         directory = os.path.join(*os.path.split(path)[:-1])
@@ -280,6 +282,17 @@ class TikiHut(Callback):
             locked_log_save(log, self.path)
 
         return False
+
+    def on_end(self, model: nn.Module = None, **kwargs):
+        if self.write_state_dict:
+            if os.path.exists(self.path):
+                log = pickle.load(open(self.path, "rb"))
+            else:
+                log = {"name": self.name}
+
+            log["state_dict"] = model.state_dict()
+            locked_log_save(log, self.path)
+
 
 
 callback_dict = {
