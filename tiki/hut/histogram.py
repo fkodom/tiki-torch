@@ -58,16 +58,15 @@ def write_histogram(logs: Iterable[Dict]):
     showlegend = st.checkbox("Show legend", value=True)
     histogram_key = 0
 
-    """
-    ### Select Parameters
-    """
+    st.write(
+        """
+        ### Select Parameters
+        """
+    )
     tags = []
     while len(tags) == 0 or tags[-1] != "-- Select --":
         tags.append(st.selectbox("Parameter:", ["-- Select --"] + params, key=histogram_key))
         histogram_key += 1
-
-    if st.button("Reset"):
-        tags = []
 
     histogram_config["showlegend"] = showlegend
     _write_custom_histogram(logs, tags[:-1], **histogram_config)
