@@ -1,10 +1,11 @@
 import argparse
-from math import ceil
+from contextlib import redirect_stdout
 
 import streamlit as st
-import plotly.graph_objects as go
 
 from tiki.hut.data import get_logs_data
+from tiki.hut.scalars import get_default_plots, get_custom_plot
+from tiki.hut.hyperparams import get_hyperparams
 from tiki.hut.config import figure_config
 
 
@@ -18,55 +19,47 @@ parser = argparse.ArgumentParser()
 parser.add_argument("logdir")
 logdir = parser.parse_args().logdir
 
-logs = get_logs_data(logdir)
-log_names = tuple(log["name"] for log in logs)
+with redirect_stdout(None):
+    logs = get_logs_data(logdir)
+log_names = list(log["name"] for log in logs)
 
 if len(logs) > 0:
-    page = st.selectbox("Select: ", ("Graphs", "Scalars", "Third"))
+    page = st.selectbox("Select: ", ("Metrics", "Hyperparams", "Graphs"))
 
-    if page == "Graphs":
+    if page == "Metrics":
+        for log in logs:
+            if "history" not in log.keys():
+                log["history"] = {}
+
+        all_scalars = [scalar for log in logs for scalar in log["history"].keys()]
+        all_scalars = sorted(list(set(all_scalars)))
+        scalars = [x for x in all_scalars if x not in ["epochs", "batches", "time"]]
+        custom_plot = st.checkbox("Custom plot", value=False)
+        showlegend = st.checkbox("Show legend", value=True)
+        figure_config["showlegend"] = showlegend
+
+        if custom_plot:
+            """
+            ### Select Axes
+            """
+            xlabel = st.selectbox("X:", ["-- Select --", *list(all_scalars)])
+            ylabel = st.selectbox("Y:", ["-- Select --", *list(all_scalars)])
+            get_custom_plot(logs, xlabel, ylabel, **figure_config)
+        else:
+            get_default_plots(logs, scalars, **figure_config)
+
+    elif page == "Graphs":
         log_name = st.selectbox("Model:", log_names)
         for log in logs:
             if log["name"] == log_name and "graph" in log.keys():
                 st.write(log["graph"])
 
-    if page == "Scalars":
-        all_scalars = [scalar for log in logs for scalar in log["history"].keys()]
-        scalars = [x for x in set(all_scalars) if x not in ["epochs", "batches"]]
-        show_legend = st.checkbox("Show legend", value=True)
+    elif page == "Hyperparams":
+        get_hyperparams(logs)
 
-        nrow = int(len(scalars) ** 0.5)
-        ncol = ceil(len(scalars) / nrow)
+    # TODO: Histograms
+    # Use Plotly 3D Filled Line plots
 
-        for scalar in scalars:
-            fig = go.Figure()
-            for log in logs:
-                if "history" in log.keys():
-                    history = log["history"]
-                else:
-                    continue
-
-                if scalar in history.keys():
-                    fig.add_trace(
-                        go.Scatter(
-                            x=history["epochs"],
-                            y=history[scalar],
-                            name=log["name"],
-                            hovertext=[
-                                f"{log['name']}: epoch={epoch}, {scalar}={x:.2e}"
-                                for epoch, x in zip(history["epochs"], history[scalar])
-                            ],
-                            hoverinfo="text",
-                        )
-                    )
-            fig.update_layout(
-                **figure_config,
-                showlegend=show_legend,
-                title=scalar,
-                xaxis=go.layout.XAxis(title="epoch"),
-                yaxis=go.layout.YAxis(title=scalar),
-            )
-            st.write(fig)
 else:
     """
     ### Found no logs to display.  
