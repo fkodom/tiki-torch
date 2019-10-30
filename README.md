@@ -52,9 +52,7 @@ The Sphinx docs are automatically built each time this command is executed.  Thi
 
 ### Training Visualization
 
-**Tiki-Hut** is a built-in dashboard for visualizing training results using `tiki`.  It is similar in to [TensorBoard](https://www.tensorflow.org/tensorboard/) in many ways, but is written in pure Python using the [Streamlit](https://streamlit.io/) library. Tiki also supports TensorBoard integration as a separate service from Tiki-Hut.
-  
-This greatly improves the code's readability for other Python/ML developers, and it allows users to more easily develop and share their visualization tools with the ML community.
+**Tiki-Hut** is a built-in dashboard for visualizing training results using `tiki`.  It is similar in to [TensorBoard](https://www.tensorflow.org/tensorboard/) in many ways, but is written in pure Python using the [Streamlit](https://streamlit.io/) library.  This greatly improves the code's readability for other Python/ML developers, and it allows users to more easily develop and share their visualization tools with the ML community. Tiki also supports TensorBoard integration as a separate service from Tiki-Hut.
 
 Training metrics are automatically collected by using the `TikiHut` callback. This includes:
 * Training / validation losses
