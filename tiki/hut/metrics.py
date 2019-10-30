@@ -57,9 +57,11 @@ def write_metrics(logs: Iterable[Dict]):
     figure_config["showlegend"] = showlegend
 
     if custom_plot:
-        """
-        ### Select Axes
-        """
+        st.write(
+            """
+            ### Select Axes
+            """
+        )
         xlabel = st.selectbox("X:", ["-- Select --", *list(all_scalars)])
         ylabel = st.selectbox("Y:", ["-- Select --", *list(all_scalars)])
         _write_custom_plot(logs, xlabel, ylabel, **figure_config)

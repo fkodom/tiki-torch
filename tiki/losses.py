@@ -16,11 +16,6 @@ __classification__ = "UNCLASSIFIED"
 __all__ = ["get_loss"]
 
 
-# TODO:
-# * focal loss
-# * other advanced loss functions
-
-
 loss_dict = {
     "bce": nn.BCELoss,
     "bce_with_logits": nn.BCEWithLogitsLoss,

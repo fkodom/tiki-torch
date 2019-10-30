@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from tiki.hut.config import histogram_config
 
 
-def _write_custom_histogram(logs: Iterable[Dict], tags: Sequence[str], **config):
+def _write_custom_histogram(logs: Iterable[Dict], tags: Sequence[str], norm="", **config):
     fig = go.Figure()
 
     for tag in tags:
@@ -32,15 +32,15 @@ def _write_custom_histogram(logs: Iterable[Dict], tags: Sequence[str], **config)
             fig.add_trace(
                 go.Histogram(
                     x=hist_values,
-                    histnorm="probability",
+                    histnorm=norm,
                     name=tag,
                 )
             )
         fig.update_layout(
             **config,
-            title=f"Parameters Histogram",
-            xaxis=go.layout.XAxis(title="Parameter Value"),
-            yaxis=go.layout.YAxis(title="Normalized Counts"),
+            title=norm,
+            xaxis=go.layout.XAxis(title="parameter value"),
+            yaxis=go.layout.YAxis(title=norm),
         )
 
     st.write(fig)
@@ -55,6 +55,7 @@ def write_histogram(logs: Iterable[Dict]):
 
     params = [f"{log['name']}: {param}" for log in logs for param in log["state_dict"].keys()]
     params = sorted(list(set(params)))
+    normalization = st.radio("Normalization", ("probability", "counts", "density"))
     showlegend = st.checkbox("Show legend", value=True)
     histogram_key = 0
 
@@ -69,4 +70,5 @@ def write_histogram(logs: Iterable[Dict]):
         histogram_key += 1
 
     histogram_config["showlegend"] = showlegend
-    _write_custom_histogram(logs, tags[:-1], **histogram_config)
+    norm = "" if normalization == "counts" else normalization
+    _write_custom_histogram(logs, tags[:-1], norm=norm, **histogram_config)
