@@ -80,8 +80,6 @@ def get_loss(loss: str or Callable) -> Callable:
         else:
             loss = loss_dict[loss]()
     elif not isinstance(loss, Callable):
-        raise TypeError(
-            f"Loss can have types: [str, Callable].  Found: {type(loss)}."
-        )
+        raise TypeError(f"Loss can have types: [str, Callable].  Found: {type(loss)}.")
 
     return loss

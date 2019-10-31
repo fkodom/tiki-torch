@@ -47,7 +47,7 @@ class TerminateOnNan(Callback):
 
     Parameters
     ----------
-    verbose: bool (optional)
+    verbose: bool, optional
         If True, prints a message to the console when an action is performed.
         Nothing is printed if the callback does nothing.  Default: True
     """
@@ -74,19 +74,19 @@ class EarlyStopping(Callback):
 
     Parameters
     ----------
-    monitor: str (optional)
+    monitor: str, optional
         Quantity to be monitored.  Allowed values: ["va_loss", "tr_loss"].
         Default:  "va_loss"
-    min_delta: float (optional)
+    min_delta: float, optional
         Minimum change in the monitored quantity to qualify as an improvement.
         I.e. an absolute change of less than min_delta, will count as no
         improvement.  Default: 0.0
-    patience: int (optional)
+    patience: int, optional
         Number of epochs that produced the monitored quantity with no improvement
         after which training will be stopped. Validation quantities may not be
         produced for every epoch if the validation frequency
         (model.fit(validation_freq=5)) is greater than one.  Default: 2
-    verbose: bool (optional)
+    verbose: bool, optional
         If True, prints a message to the console when an action is performed.
         Nothing is printed if the callback does nothing.  Default: True
 
@@ -119,7 +119,7 @@ class EarlyStopping(Callback):
 
         if len(monitor) > self.min_epochs and all(
             x + self.min_delta > monitor[-self.patience - 1]
-            for x in monitor[-self.patience:]
+            for x in monitor[-self.patience :]
         ):
             if self.verbose:
                 print("\nLoss stopped decreasing. Terminating training.")
@@ -133,11 +133,11 @@ class ModelCheckpoint(Callback):
 
     Parameters
     ----------
-    path: str (optional)
+    path: str, optional
         Path to the save file for this model.  If none is provided, a random
         codename will be generated with file extension '.dict', which will be
         placed inside the 'models' subfolder.
-    verbose: bool (optional)
+    verbose: bool, optional
         If True, prints a message to the console when an action is performed.
         Nothing is printed if the callback does nothing.  Default: True
     """
@@ -149,16 +149,13 @@ class ModelCheckpoint(Callback):
         if not os.path.exists(directory):
             os.makedirs(directory)
 
-    def on_epoch(
-            self,
-            trainer: object = None,
-            model: nn.Module = None,
-            **kwargs
-    ):
+    def on_epoch(self, trainer: object = None, model: nn.Module = None, **kwargs):
         path = custom_path(
             self.path, codename=__codename__, epoch=trainer.info["epochs"]
         )
-        if isinstance(model, DataParallel) or isinstance(model, DistributedDataParallel):
+        if isinstance(model, DataParallel) or isinstance(
+            model, DistributedDataParallel
+        ):
             torch.save(model.module.state_dict(), path)
         else:
             torch.save(model.state_dict(), path)
@@ -171,10 +168,10 @@ class TensorBoard(Callback):
 
     Parameters
     ----------
-    path: str (optional)
+    path: str, optional
         Path to the log directory for this run.  If none is provided, it will be
         placed in a subfolder of 'logs' using a random codename.
-    verbose: bool (optional)
+    verbose: bool, optional
         If True, prints a message to the console when an action is performed.
         Nothing is printed if the callback does nothing.  Default: True
     """
@@ -200,8 +197,7 @@ class TensorBoard(Callback):
     def on_start(self, model: nn.Module = None, **kwargs):
         if self.write_graph:
             self.writer.add_graph(
-                model=model,
-                input_to_model=model.info["input_to_model"]
+                model=model, input_to_model=model.info["input_to_model"]
             )
 
     def on_epoch(self, trainer: object = None, **kwargs):
@@ -219,27 +215,33 @@ class TikiHut(Callback):
 
     Parameters
     ----------
-    path: str (optional)
+    path: str, optional
         Path to the log directory for this run.  If none is provided, it will be
         placed in a subfolder of 'logs' using a random codename.
-    verbose: bool (optional)
-        If True, prints a message to the console when an action is performed.
-        Nothing is printed if the callback does nothing.  Default: True
+    write_metrics: bool, optional
+        If True, writes training/validation metrics to the training log
+    write_hyperparams: bool, optional
+        If True, writes training hyperparameters to the training log
+    write_graph: bool, optional
+        If True, writes computation graphs to the training log
+    write_state_dict: bool, optional
+        If True, writes the model's `state_dict` to the training log.  Allows
+        users to visualize parameter histograms using `tiki hut`.
     """
 
     def __init__(
         self,
         path: str = os.path.join("logs", "{codename}"),
-        write_scalars: bool = True,
-        write_graph: bool = True,
+        write_metrics: bool = True,
         write_hyperparams: bool = True,
+        write_graph: bool = True,
         write_state_dict: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
         path = custom_path(path, codename=__codename__, **kwargs)
         self.path = path + ".hut"
-        self.write_scalars = write_scalars
+        self.write_scalars = write_metrics
         self.write_hyperparams = write_hyperparams
         self.write_graph = write_graph
         self.write_state_dict = write_state_dict
@@ -254,7 +256,7 @@ class TikiHut(Callback):
         trainer: object = None,
         model: nn.Module = None,
         outputs: Tensor = None,
-        **kwargs
+        **kwargs,
     ):
         if self.write_graph or self.write_hyperparams:
             if os.path.exists(self.path):
@@ -292,7 +294,6 @@ class TikiHut(Callback):
 
             log["state_dict"] = model.state_dict()
             locked_log_save(log, self.path)
-
 
 
 callback_dict = {

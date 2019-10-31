@@ -76,8 +76,8 @@ class BaseTrainTest(object):
         }
         optimizer_hyperparams = optimizer.state_dict()["param_groups"][0]
         self.hyperparams = {
-            key: val for key, val in
-            chain(hyperparams.items(), optimizer_hyperparams.items())
+            key: val
+            for key, val in chain(hyperparams.items(), optimizer_hyperparams.items())
         }
 
     def _execute_callbacks(
@@ -121,8 +121,8 @@ class BaseTrainTest(object):
     def run_on_batch(
         self,
         model: nn.Module,
-        tr_batch: Sequence[Tensor] = (None,),
-        va_batch: Sequence[Tensor] = (None,),
+        tr_batch: Batch = (None,),
+        va_batch: Batch = (None,),
         loss: object = None,
         optimizer: str or optim.Optimizer = "sgd",
         gpus: int or Sequence[int] = (),
@@ -247,8 +247,5 @@ class BaseTrainTest(object):
                 self.metrics[key] = alpha * self.metrics[key] + (1 - alpha) * val
 
         return self._execute_callbacks(
-            model=model,
-            callbacks=callbacks,
-            execution_times=["on_batch"],
-            outputs=out,
+            model=model, callbacks=callbacks, execution_times=["on_batch"], outputs=out
         )

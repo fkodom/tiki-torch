@@ -18,7 +18,7 @@ class MnistNet(nn.Module):
         self.layers = nn.Sequential(
             nn.Linear(784, 20),
             nn.Linear(20, 10),
-            nn.Sigmoid(),
+            nn.Sigmoid()
         )
 
     def forward(self, x):
@@ -33,7 +33,7 @@ if __name__ == "__main__":
     Trainer().train(
         net,
         tr_dataset=tr_dataset,
-        va_dataset=va_dataset,
+        # va_dataset=va_dataset,
         loss="cross_entropy",
         optimizer="adam",
         epochs=3,
@@ -43,8 +43,8 @@ if __name__ == "__main__":
             "terminate_on_nan",
             "early_stopping",
             "model_checkpoint",
-            "tiki_hut"
-        ]
+            "tiki_hut",
+        ],
     )
 
     # Not really testing anything, since we already used the validation

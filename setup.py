@@ -1,6 +1,8 @@
 import os
 from setuptools import setup, find_packages
 
+from tiki import __name__, __version__
+
 
 local_path = os.path.abspath(os.path.dirname(__file__))
 with open(os.path.join(local_path, "requirements.txt")) as f:
@@ -9,8 +11,8 @@ with open(os.path.join(local_path, "README.md"), "r") as f:
     long_description = f.read()
 
 setup(
-    name="tiki",
-    version="0.1",
+    name=__name__,
+    version=__version__,
     description="High-level neural networks library running on PyTorch",
     long_description=long_description,
     url="https://gitlab.radiancetech.com/radiance-deep-learning/tiki-torch",

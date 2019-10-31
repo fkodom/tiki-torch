@@ -1,3 +1,9 @@
+"""
+hyperparams.py
+--------------
+Method(s) for writing a DataFrame of training hyperparameters to Tiki-Hut
+"""
+
 from typing import List, Dict
 from collections import OrderedDict
 
@@ -5,7 +11,22 @@ import streamlit as st
 from pandas import DataFrame
 
 
-def write_hyperparams(logs: List[Dict]):
+__author__ = "Frank Odom"
+__company__ = "Radiance Technologies, Inc."
+__email__ = "frank.odom@radiancetech.com"
+__classification__ = "UNCLASSIFIED"
+__all__ = ["write_hyperparams"]
+
+
+def write_hyperparams(logs: List[Dict]) -> None:
+    """Writes a `DataFrame` containing all of the recorded hyperparameters from
+    each training log.
+
+    Parameters
+    ----------
+    logs: Iterable[dict]
+        Iterable of training logs. Each is a dictionary of training information
+    """
     for log in logs:
         if "hyperparams" not in log.keys():
             log["hyperparams"] = {}

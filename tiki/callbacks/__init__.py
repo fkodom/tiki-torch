@@ -6,7 +6,7 @@ from tiki.callbacks.callbacks import (
     TensorBoard,
     TikiHut,
     get_callback,
-    compile_callbacks
+    compile_callbacks,
 )
 
 __all__ = [

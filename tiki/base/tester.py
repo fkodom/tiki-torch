@@ -47,7 +47,7 @@ class Tester(BaseTrainTest):
     def test_on_batch(
         self,
         model: nn.Module,
-        te_batch: Sequence[Tensor] = (None,),
+        te_batch: Batch = (None,),
         loss: object = None,
         gpus: int or Sequence[int] = (),
         alpha: float = 0.99,
@@ -190,19 +190,15 @@ class Tester(BaseTrainTest):
             gpus=gpus,
         )
 
-        (te_loader, ) = get_data_loaders(
-            (te_dataset, ),
+        (te_loader,) = get_data_loaders(
+            (te_dataset,),
             batch_size=batch_size,
             shuffle=shuffle,
             num_workers=num_workers,
         )
 
         if progress_bar:
-            prog_bar = tqdm(
-                total=len(te_loader),
-                desc="Test",
-                dynamic_ncols=True,
-            )
+            prog_bar = tqdm(total=len(te_loader), desc="Test", dynamic_ncols=True)
         else:
             prog_bar = None
 
@@ -223,8 +219,7 @@ class Tester(BaseTrainTest):
                 return True
 
             postfixes = [
-                f"{k}: {v:+.3e}" for k, v in self.metrics.items()
-                if "tr" not in k
+                f"{k}: {v:+.3e}" for k, v in self.metrics.items() if "tr" not in k
             ]
             postfix = ", ".join(postfixes).replace("va", "te")
 

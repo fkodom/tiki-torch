@@ -26,10 +26,6 @@ __classification__ = "UNCLASSIFIED"
 __all__ = ["Trainer"]
 
 
-# TODO:
-# * multi-GPU loss
-# * multi-GPU performance metrics
-
 # Define batch datatype (used for internal methods).
 # Each batch is an iterable (over train, validation sets) of Tensors.
 # If the inputs have inconsistent sizes, lists of Tensors are used instead.
@@ -308,6 +304,4 @@ class Trainer(BaseTrainTest):
             if break_flag:
                 break
 
-        self._execute_callbacks(
-            model, callbacks=callbacks, execution_times=["on_end"]
-        )
+        self._execute_callbacks(model, callbacks=callbacks, execution_times=["on_end"])

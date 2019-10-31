@@ -1,3 +1,9 @@
+"""
+metrics.py
+----------
+Methods for writing graphs of training metrics to Tiki-Hut
+"""
+
 from typing import Iterable, Dict
 
 import streamlit as st
@@ -6,7 +12,30 @@ import plotly.graph_objects as go
 from tiki.hut.config import figure_config
 
 
-def _write_custom_plot(logs: Iterable[Dict], xlabel: str, ylabel: str, **config):
+__author__ = "Frank Odom"
+__company__ = "Radiance Technologies, Inc."
+__email__ = "frank.odom@radiancetech.com"
+__classification__ = "UNCLASSIFIED"
+__all__ = ["write_metrics"]
+
+
+def _write_custom_plot(
+    logs: Iterable[Dict], xlabel: str, ylabel: str, **config
+) -> None:
+    """Writes a `go.Scatter` plot with x- and y-axes specified by `xlabel` and
+    `ylabel`.  A separate line is written for each log file.
+
+    Parameters
+    ----------
+    logs: Iterable[dict]
+        Iterable of training logs. Each is a dictionary of training information
+    xlabel: str
+        String specifying the metric to plot along the x-axis
+    ylabel: str
+        String specifying the metric to plot along the y-axis
+    **config
+        Additional keyword arguments for customizing the histogram figure.
+    """
     fig = go.Figure()
     for log in logs:
         if "history" in log.keys() and ylabel in log["history"].keys():
@@ -39,12 +68,33 @@ def _write_custom_plot(logs: Iterable[Dict], xlabel: str, ylabel: str, **config)
     st.write(fig)
 
 
-def _write_default_plots(logs: Iterable[Dict], scalars: Iterable[str], **config):
-    for scalar in scalars:
+def _write_default_plots(logs: Iterable[Dict], tags: Iterable[str], **config) -> None:
+    """For each metric specified in `tags`, writes a `go.Scatter` plot with
+    "epochs" along the x-axis and the metric along the y-axis.
+
+    Parameters
+    ----------
+    logs: Iterable[dict]
+        Iterable of training logs. Each is a dictionary of training information
+    tags: Iterable[str]
+        Iterable of strings specifying which metrics to plot
+    **config
+        Additional keyword arguments for customizing the histogram figure.
+    """
+    for scalar in tags:
         _write_custom_plot(logs, "epochs", scalar, **config)
 
 
-def write_metrics(logs: Iterable[Dict]):
+def write_metrics(logs: Iterable[Dict]) -> None:
+    """Provides users with (1) the option to display default plots or create
+    their own custom plot and (2) the option to show/hide legends.  Then,
+    writes `go.Scatter` plots to Tiki-Hut.
+
+    Parameters
+    ----------
+    logs: Iterable[dict]
+        Iterable of training logs. Each is a dictionary of training information
+    """
     for log in logs:
         if "history" not in log.keys():
             log["history"] = {}

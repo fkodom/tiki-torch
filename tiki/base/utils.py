@@ -11,12 +11,7 @@ import torch
 from torch import Tensor
 import torch.nn as nn
 import torch.optim as optim
-
-# noinspection PyPep8Naming
-from torch.nn.parallel import DataParallel as DP
-
-# noinspection PyPep8Naming
-from torch.nn.parallel import DistributedDataParallel as DDP
+from torch.nn.parallel import DataParallel, DistributedDataParallel
 
 from tiki.losses import get_loss
 from tiki.metrics import get_metric
@@ -72,7 +67,11 @@ def _setup_data_parallel(
     ValueError
         If any of the specified GPUs are not available on the local system
     """
-    if not gpus or isinstance(model, DP) or isinstance(model, DDP):
+    if (
+        not gpus
+        or isinstance(model, DataParallel)
+        or isinstance(model, DistributedDataParallel)
+    ):
         dp_model = model
     else:
         # Set the address and port for the cluster (localhost).
@@ -88,13 +87,13 @@ def _setup_data_parallel(
         try:
             from torch.distributed import init_process_group
 
-            data_parallel = DDP
+            data_parallel = DistributedDataParallel
         except ImportError:
             # noinspection PyUnusedLocal
             def init_process_group(backend: str):
                 pass
 
-            data_parallel = DP
+            data_parallel = DataParallel
 
         init_process_group("gloo")
         dp_model = data_parallel(model, device_ids=gpus)
