@@ -8,6 +8,7 @@ from typing import List
 import os
 import pickle
 
+import streamlit as st
 from filelock import SoftFileLock
 
 
@@ -68,6 +69,18 @@ def _update_log_names(logs: List[dict], log_files: List[str]) -> List[dict]:
     return logs
 
 
+@st.cache(persist=True, allow_output_mutation=True)
+def _load_log_data(log_file: str) -> dict:
+    lock_file = log_file + ".lock"
+    with SoftFileLock(lock_file):
+        log = pickle.load(open(log_file, "rb"))
+
+    log_name = os.path.split(log_file)[-1][:-4]  # remove '.hut' ending
+    log["name"] = log_name
+
+    return log
+
+
 def load_logs_data(logdir: str = "logs") -> List[dict]:
     """Reads all file names in the specified log directory, and loads training 
     information from any of them with file ending `.hut`.  Training logs are 
@@ -84,12 +97,13 @@ def load_logs_data(logdir: str = "logs") -> List[dict]:
     List[dict]
         List of training logs. Each is a dictionary of training information
     """
-    lock_file = os.path.join(logdir, "logs.lock")
     log_files = _get_log_files(logdir=logdir)
 
-    with SoftFileLock(lock_file):
-        logs = [pickle.load(open(file, "rb")) for file in log_files]
+    logs = [_load_log_data(file) for file in log_files]
 
-    logs = _update_log_names(logs, log_files)
+    # lock_file = os.path.join(logdir, "logs.lock")
+    # with SoftFileLock(lock_file):
+    #     logs = [pickle.load(open(file, "rb")) for file in log_files]
+    # logs = _update_log_names(logs, log_files)
 
     return logs

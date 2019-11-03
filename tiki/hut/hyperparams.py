@@ -27,6 +27,7 @@ def write_hyperparams(logs: List[Dict]) -> None:
     logs: Iterable[dict]
         Iterable of training logs. Each is a dictionary of training information
     """
+    st.write("""# Hyperparameters""")
     for log in logs:
         if "hyperparams" not in log.keys():
             log["hyperparams"] = {}

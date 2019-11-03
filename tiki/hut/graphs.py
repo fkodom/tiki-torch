@@ -26,6 +26,7 @@ def write_graphs(logs: Iterable[Dict]) -> None:
     logs: Iterable[dict]
         Iterable of training logs. Each is a dictionary of training information
     """
+    st.write("""# Computation Graphs""")
     log_names = list(log["name"] for log in logs)
     log_name = st.selectbox("Model:", log_names)
     for log in logs:

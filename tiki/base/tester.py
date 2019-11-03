@@ -25,10 +25,6 @@ __classification__ = "UNCLASSIFIED"
 __all__ = ["Tester"]
 
 
-# TODO:
-# * multi-GPU loss
-# * multi-GPU performance metrics
-
 # Define batch datatype (used for internal methods).
 # Each batch is an iterable (over train, validation sets) of Tensors.
 # If the inputs have inconsistent sizes, lists of Tensors are used instead.

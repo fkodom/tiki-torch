@@ -50,7 +50,7 @@ def _write_custom_plot(
                     name=log["name"],
                     hovertext=[
                         f"{log['name']}<br>"
-                        f"{t.strftime('%Y %b %d %H:%M:%S')}<br>"
+                        f"{t.strftime('%d %b %y %H:%M:%S')}<br>"
                         f"{xlabel}={x:.2e}<br>"
                         f"{ylabel}={y:.2e}"
                         for x, y, t in zip(xlabels, ylabels, times)
@@ -85,6 +85,11 @@ def _write_default_plots(logs: Iterable[Dict], tags: Iterable[str], **config) ->
         _write_custom_plot(logs, "epochs", scalar, **config)
 
 
+def _show_legend():
+    showlegend = st.checkbox("Show legend", value=True)
+    figure_config["showlegend"] = showlegend
+
+
 def write_metrics(logs: Iterable[Dict]) -> None:
     """Provides users with (1) the option to display default plots or create
     their own custom plot and (2) the option to show/hide legends.  Then,
@@ -95,25 +100,26 @@ def write_metrics(logs: Iterable[Dict]) -> None:
     logs: Iterable[dict]
         Iterable of training logs. Each is a dictionary of training information
     """
-    for log in logs:
-        if "history" not in log.keys():
-            log["history"] = {}
+    st.write("""# Metrics""")
+    # for log in logs:
+    #     if "history" not in log.keys():
+    #         log["history"] = {}
 
-    all_scalars = [scalar for log in logs for scalar in log["history"].keys()]
+    all_scalars = []
+    for log in logs:
+        if "history" in log.keys():
+            all_scalars += list(log["history"].keys())
+    # all_scalars = [scalar for log in logs for scalar in log["history"].keys()]
     all_scalars = sorted(list(set(all_scalars)))
     scalars = [x for x in all_scalars if x not in ["epochs", "batches", "time"]]
     custom_plot = st.checkbox("Custom plot", value=False)
-    showlegend = st.checkbox("Show legend", value=True)
-    figure_config["showlegend"] = showlegend
 
     if custom_plot:
-        st.write(
-            """
-            ### Select Axes
-            """
-        )
+        st.write("""### Select Axes""")
         xlabel = st.selectbox("X:", ["-- Select --", *list(all_scalars)])
         ylabel = st.selectbox("Y:", ["-- Select --", *list(all_scalars)])
+        _show_legend()
         _write_custom_plot(logs, xlabel, ylabel, **figure_config)
     else:
+        _show_legend()
         _write_default_plots(logs, scalars, **figure_config)

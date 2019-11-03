@@ -33,14 +33,13 @@ def custom_path(path: str, **kwargs) -> str:
     if "{epoch}" in path and "epoch" in kwargs.keys():
         path = path.replace("{epoch}", str(kwargs["epoch"]))
     if "{date}" in path:
-        date_str = str(datetime.date(datetime.now()))
+        date_str = datetime.now().strftime('%d %b %y')
         path = path.replace("{date}", date_str)
     if "{time}" in path:
-        time_str = str(datetime.time(datetime.now()))[:-7]
+        time_str = datetime.now().strftime('%H-%M-%S')
         path = path.replace("{time}", time_str)
     if "{datetime}" in path:
-        datetime_str = str(datetime.now())[:-7]
-        datetime_str = datetime_str.replace(" ", "-").replace(":", "-")
+        datetime_str = datetime.now().strftime('%d %b %y %H-%M-%S')
         path = path.replace("{datetime}", datetime_str)
 
     return path

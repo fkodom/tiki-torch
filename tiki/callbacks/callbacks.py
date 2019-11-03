@@ -28,7 +28,9 @@ __author__ = "Frank Odom"
 __company__ = "Radiance Technologies, Inc."
 __email__ = "frank.odom@radiancetech.com"
 __classification__ = "UNCLASSIFIED"
-__codename__ = codenamize(str(time()), join="", capitalize=True)
+__codename__ = codenamize(
+    str(time()), join="", capitalize=True, max_item_chars=5
+)
 __all__ = [
     "TerminateOnNan",
     "EarlyStopping",

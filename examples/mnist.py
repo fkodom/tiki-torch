@@ -33,7 +33,7 @@ if __name__ == "__main__":
     Trainer().train(
         net,
         tr_dataset=tr_dataset,
-        # va_dataset=va_dataset,
+        va_dataset=va_dataset,
         loss="cross_entropy",
         optimizer="adam",
         epochs=3,

@@ -81,6 +81,7 @@ def write_histogram(logs: Iterable[Dict]) -> None:
     logs: Iterable[dict]
         Iterable of training logs. Each is a dictionary of training information
     """
+    st.write("""# Histograms""")
     for log in logs:
         if "state_dict" not in log.keys():
             log["state_dict"] = {}
@@ -91,8 +92,6 @@ def write_histogram(logs: Iterable[Dict]) -> None:
         f"{log['name']}: {param}" for log in logs for param in log["state_dict"].keys()
     ]
     params = sorted(list(set(params)))
-    normalization = st.radio("Normalization", ("probability", "counts", "density"))
-    showlegend = st.checkbox("Show legend", value=True)
     histogram_key = 0
 
     st.write(
@@ -108,6 +107,8 @@ def write_histogram(logs: Iterable[Dict]) -> None:
         )
         histogram_key += 1
 
+    normalization = st.radio("Normalization", ("probability", "counts", "density"))
+    showlegend = st.checkbox("Show legend", value=True)
     histogram_config["showlegend"] = showlegend
     norm = "" if normalization == "counts" else normalization
     _write_custom_histogram(logs, tags[:-1], norm=norm, **histogram_config)

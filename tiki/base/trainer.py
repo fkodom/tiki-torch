@@ -177,11 +177,7 @@ class Trainer(BaseTrainTest):
                 prog_bar.update()
                 prog_bar.set_postfix_str(postfix)
 
-        for key, val in chain(self.info.items(), self.metrics.items()):
-            if key not in self.history.keys():
-                self.history[key] = []
-            self.history[key].append(val)
-
+        self._update_history()
         if progress_bar:
             prog_bar.close()
         elif epoch % verbosity == 0:
