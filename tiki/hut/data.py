@@ -44,33 +44,24 @@ def _get_log_files(logdir: str = "logs") -> List[str]:
     return file_paths
 
 
-def _update_log_names(logs: List[dict], log_files: List[str]) -> List[dict]:
-    """For each training log, updates the `"name"` value to match its file name.
-    This allows users to rename their log files, and the name will be reflected
-    within Tiki-Hut.
+@st.cache(persist=True, allow_output_mutation=True)
+def _load_log_data(log_file: str) -> dict:
+    r"""Loads a single log file, and caches the result for faster app
+    performance.  A file lock is created for each file, and released as soon
+    as the log is loaded.  The name for each log is also updated to match the
+    name of the file (allows users to re-name files, and tiki hut will match
+    the changes).
 
     Parameters
     ----------
-    logs: List[dict]
-        List of training logs. Each is a dictionary of training information
-    log_files: List[str]
-        List of log file names (can also be complete file paths)
+    log_file: str
+        Path to the log file to load
 
     Returns
     -------
-    List[dict]
-        Updated list of training logs, with names matching the log file names
+    dict
+        Dictionary of training information
     """
-    for log, log_file in zip(logs, log_files):
-        file_name = os.path.split(log_file)[-1]
-        name = file_name[:-4]  # remove `.hut` file ending
-        log["name"] = name
-
-    return logs
-
-
-@st.cache(persist=True, allow_output_mutation=True)
-def _load_log_data(log_file: str) -> dict:
     lock_file = log_file + ".lock"
     with SoftFileLock(lock_file):
         log = pickle.load(open(log_file, "rb"))
@@ -98,12 +89,4 @@ def load_logs_data(logdir: str = "logs") -> List[dict]:
         List of training logs. Each is a dictionary of training information
     """
     log_files = _get_log_files(logdir=logdir)
-
-    logs = [_load_log_data(file) for file in log_files]
-
-    # lock_file = os.path.join(logdir, "logs.lock")
-    # with SoftFileLock(lock_file):
-    #     logs = [pickle.load(open(file, "rb")) for file in log_files]
-    # logs = _update_log_names(logs, log_files)
-
-    return logs
+    return [_load_log_data(file) for file in log_files]
