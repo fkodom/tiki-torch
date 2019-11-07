@@ -138,7 +138,7 @@ class BaseTrainTest(object):
         loss: object = None,
         optimizer: str or optim.Optimizer = "sgd",
         gpus: int or Sequence[int] = (),
-        alpha: float = 0.95,
+        alpha: float = 0.98,
         metrics: Iterable[str or Callable] = (),
         callbacks: Iterable[str or Callback] = (),
     ) -> bool:
@@ -242,7 +242,8 @@ class BaseTrainTest(object):
             optimizer.zero_grad()
             if not any(x is None for x in tr_batch):
                 batch = batch_to_device(tr_batch, device)
-                out = torch.cat((out, dp_model(*batch[:-1])), dim=0)
+                num_inputs = max(1, len(batch) - 1)
+                out = torch.cat((out, dp_model(*batch[:num_inputs])), dim=0)
                 tr_loss = tr_loss + loss(out, batch[-1])
 
                 # Execute callbacks before model update, and if necessary, stop training
@@ -277,7 +278,7 @@ class BaseTrainTest(object):
         loss: object = None,
         optimizer: str or optim.Optimizer = "sgd",
         gpus: int or Sequence[int] = (),
-        alpha: float = 0.95,
+        alpha: float = 0.98,
         metrics: Iterable[str or Callable] = (),
         callbacks: Iterable[str or Callback] = (),
     ) -> bool:

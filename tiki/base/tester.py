@@ -46,7 +46,7 @@ class Tester(BaseTrainTest):
         te_batch: Batch = (None,),
         loss: object = None,
         gpus: int or Sequence[int] = (),
-        alpha: float = 0.99,
+        alpha: float = 0.98,
         metrics: Iterable[str or Callable] = (),
         callbacks: Iterable[str or Callback] = (),
     ) -> bool:
@@ -114,7 +114,7 @@ class Tester(BaseTrainTest):
         batch_size: int = 20,
         shuffle: bool = True,
         num_workers: int = 4,
-        alpha: float = 0.95,
+        alpha: float = 0.98,
         metrics: Iterable[str or Callable] = (),
         callbacks: Iterable[str or Callback] = (),
         progress_bar: bool = True,

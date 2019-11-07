@@ -18,7 +18,7 @@ st.sidebar.markdown(
     """
     # Tiki Hut
     
-    Your island headquarters and training visualization dashboard.
+    Island headquarters and training visualization dashboard.
     """
 )
 
