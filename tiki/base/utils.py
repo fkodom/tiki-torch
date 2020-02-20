@@ -84,18 +84,19 @@ def _setup_data_parallel(
             seed = torch.randint(0, int(1e6), size=(1,)).item()
         torch.manual_seed(seed)
 
-        try:
-            from torch.distributed import init_process_group
+        # TODO: Fix this bug for Linux
+        # try:
+        #     from torch.distributed import init_process_group
+        #
+        #     data_parallel = DistributedDataParallel
+        # except ImportError:
+        #     # noinspection PyUnusedLocal
+        #     def init_process_group(backend: str):
+        #         pass
 
-            data_parallel = DistributedDataParallel
-        except ImportError:
-            # noinspection PyUnusedLocal
-            def init_process_group(backend: str):
-                pass
+        data_parallel = DataParallel
 
-            data_parallel = DataParallel
-
-        init_process_group("gloo")
+        # init_process_group("gloo")
         dp_model = data_parallel(model, device_ids=gpus)
 
     return dp_model
