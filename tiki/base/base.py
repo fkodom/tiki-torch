@@ -70,7 +70,7 @@ class BaseTrainTest(object):
         callbacks: Iterable[Callback] = (),
     ):
         hyperparams = {
-            "batch_size": batch[0].shape[0],
+            "batch_size": len(batch[0]),
             "loss": loss.__name__ if hasattr(loss, "__name__") else str(loss),
             "optimizer": optimizer.__class__.__name__,
             "gpus": gpus,
@@ -238,13 +238,17 @@ class BaseTrainTest(object):
 
         for tr_batch in tr_batches:
             tr_loss = 0.0
-            out = torch.empty(0, device=device)
+            out = []
             optimizer.zero_grad()
             if not any(x is None for x in tr_batch):
                 batch = batch_to_device(tr_batch, device)
                 num_inputs = max(1, len(batch) - 1)
-                out = torch.cat((out, dp_model(*batch[:num_inputs])), dim=0)
-                tr_loss = tr_loss + loss(out, batch[-1])
+                result = dp_model(*batch[:num_inputs])
+                if isinstance(result, list):
+                    out += result
+                else:
+                    out.append(result)
+                tr_loss = tr_loss + loss(result, batch[-1])
 
                 # Execute callbacks before model update, and if necessary, stop training
                 if self._execute_callbacks(
