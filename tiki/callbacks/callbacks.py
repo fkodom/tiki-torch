@@ -14,7 +14,6 @@ import pickle
 import torch
 from torch import Tensor
 import torch.nn as nn
-from torch.utils.tensorboard import SummaryWriter
 from torch.nn.parallel import DataParallel, DistributedDataParallel
 from codenamize import codenamize
 from torchviz import make_dot
@@ -35,7 +34,6 @@ __all__ = [
     "TerminateOnNan",
     "EarlyStopping",
     "ModelCheckpoint",
-    "TensorBoard",
     "TikiHut",
     "get_callback",
     "compile_callbacks",
@@ -165,53 +163,6 @@ class ModelCheckpoint(Callback):
         return False
 
 
-class TensorBoard(Callback):
-    """Logs training/validation data to TensorBoard for visualization.
-
-    Parameters
-    ----------
-    path: str, optional
-        Path to the log directory for this run.  If none is provided, it will be
-        placed in a subfolder of 'logs' using a random codename.
-    verbose: bool, optional
-        If True, prints a message to the console when an action is performed.
-        Nothing is printed if the callback does nothing.  Default: True
-    """
-
-    def __init__(
-        self,
-        path: str = os.path.join("logs", "{codename}"),
-        comment: str = "",
-        write_scalars: bool = True,
-        write_graph: bool = False,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.write_scalars = write_scalars
-        self.write_graph = write_graph
-
-        self.writer = SummaryWriter(
-            log_dir=custom_path(path, codename=__codename__, **kwargs),
-            comment=comment,
-            **kwargs,
-        )
-
-    def on_start(self, model: nn.Module = None, **kwargs):
-        if self.write_graph:
-            self.writer.add_graph(
-                model=model, input_to_model=model.info["input_to_model"]
-            )
-
-    def on_epoch(self, trainer: object = None, **kwargs):
-        if self.write_scalars:
-            for key, val in trainer.metrics.items():
-                self.writer.add_scalar(key, val, trainer.info["epochs"])
-
-            self.writer.flush()
-
-        return False
-
-
 class TikiHut(Callback):
     """Logs training/validation data to `tiki hut` for visualization.
 
@@ -267,7 +218,7 @@ class TikiHut(Callback):
                 log = {"name": self.name}
 
             if "graph" not in log.keys():
-                log["graph"] = make_dot(outputs, params=dict(model.named_parameters()))
+                log["graph"] = make_dot(tuple(outputs), params=dict(model.named_parameters()))
             if "hyperparams" not in log.keys():
                 log["hyperparams"] = trainer.hyperparams
 
@@ -302,7 +253,6 @@ callback_dict = {
     "terminate_on_nan": TerminateOnNan,
     "early_stopping": EarlyStopping,
     "model_checkpoint": ModelCheckpoint,
-    "tensorboard": TensorBoard,
     "tiki_hut": TikiHut,
 }
 
