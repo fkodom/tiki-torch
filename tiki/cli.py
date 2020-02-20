@@ -13,7 +13,7 @@ from tiki import __name__, __version__
 
 
 file_path = path.abspath(__file__)
-root_dir = path.join(*path.split(file_path), "..", "..")
+root_dir = path.join(*path.split(file_path)[:-1], "..")
 tiki_dir = path.join(root_dir, "tiki")
 docs_dir = path.join(root_dir, "docs")
 
