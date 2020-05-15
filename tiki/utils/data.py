@@ -110,7 +110,6 @@ def get_data_loaders(
     datasets: Sequence[Dataset],
     batch_size: int = 20,
     shuffle: bool = True,
-    num_workers: int = 0,
 ) -> Sequence[DataLoader]:
     """Prepares DataLoaders for a sequence of Datasets.  The first returned
     DataLoader will have batches of size 'batch_size'. All others will have
@@ -144,7 +143,7 @@ def get_data_loaders(
     elif isinstance(datasets[0], ListDataset):
         get_data_loader = partial(ListDataLoader, shuffle=shuffle)
     elif isinstance(datasets[0], Dataset):
-        get_data_loader = partial(DataLoader, shuffle=shuffle, num_workers=num_workers)
+        get_data_loader = partial(DataLoader, shuffle=shuffle)
     else:
         raise ValueError(f"Dataset type {type(datasets[0])} not supported.")
 

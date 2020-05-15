@@ -19,7 +19,7 @@ docs_dir = path.join(root_dir, "docs")
 
 
 def main():
-    """Provides two CLI commands for users:
+    """Provides three CLI commands for users:
         * `tiki --version` displays the installed version of `tiki`
         * `tiki docs` displays Sphinx docs for the `tiki` API
         * `tiki hut --logdir <path-to-logs>` displays a visualization dashboard

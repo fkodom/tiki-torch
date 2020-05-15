@@ -1,12 +1,8 @@
 torch>=1.3.0
-gputil
+numpy
 plotly
 streamlit
 tqdm
 codenamize
-future
 filelock
 torchviz
-sphinx
-sphinx_rtd_theme
-recommonmark

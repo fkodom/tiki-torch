@@ -35,7 +35,7 @@ if __name__ == "__main__":
         tr_dataset=tr_dataset,
         va_dataset=va_dataset,
         loss="cross_entropy",
-        optimizer="adam",
+        optimizer="sgd",
         epochs=3,
         gpus=[0],
         metrics=["sparse_cat_acc"],
